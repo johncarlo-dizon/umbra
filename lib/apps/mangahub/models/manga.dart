@@ -1,3 +1,5 @@
+import '../services/image_proxy.dart';
+
 class Manga {
   final String id;
   final String title;
@@ -56,7 +58,9 @@ class Manga {
 
     final mangaId = json['id'] as String;
     final coverUrl = coverFileName != null
-        ? 'https://uploads.mangadex.org/covers/$mangaId/$coverFileName.256.jpg'
+        ? ImageProxy.wrap(
+            'https://uploads.mangadex.org/covers/$mangaId/$coverFileName.256.jpg',
+          )
         : null;
 
     return Manga(

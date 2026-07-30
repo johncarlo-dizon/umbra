@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/manga.dart';
 import '../models/chapter.dart';
+import 'image_proxy.dart';
 
 class MangaHubException implements Exception {
   final String message;
@@ -234,7 +235,7 @@ class MangaHubService {
       final fileNames = (chapterData['data'] as List<dynamic>).cast<String>();
 
       return fileNames
-          .map((fileName) => '$baseUrl/data/$hash/$fileName')
+          .map((fileName) => ImageProxy.wrap('$baseUrl/data/$hash/$fileName'))
           .toList();
     } on MangaHubException {
       rethrow;
