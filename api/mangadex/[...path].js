@@ -7,11 +7,6 @@ module.exports = async (req, res) => {
     return;
   }
 
-  if (req.query.debug) {
-    res.status(200).json({ rawUrl: req.url, query: req.query });
-    return;
-  }
-
   const prefix = '/api/mangadex/';
   const idx = req.url.indexOf(prefix);
   const rawTail = idx !== -1 ? req.url.slice(idx + prefix.length) : '';
@@ -23,10 +18,12 @@ module.exports = async (req, res) => {
   if (queryPart) {
     const params = new URLSearchParams(queryPart);
 
-    // Strip Vercel's internal routing params — these leak into req.url
-    // for bracket-based catch-all functions and aren't real API params.
+    // Strip Vercel's internal routing params — for a [...path] catch-all
+    // route, Vercel injects a literal "...path" query key (and we also
+    // guard against our own leftover "debug" flag) that MangaDex's API
+    // rejects since it doesn't allow unrecognized properties.
     for (const key of [...params.keys()]) {
-      if (key.startsWith('___') || key === 'path') {
+      if (key.startsWith('.') || key === 'debug') {
         params.delete(key);
       }
     }
