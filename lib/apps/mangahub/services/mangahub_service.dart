@@ -14,7 +14,10 @@ class MangaHubException implements Exception {
 class MangaHubService {
   MangaHubService._();
 
-  static const _baseUrl = 'https://api.mangadex.org';
+  static const _directBaseUrl = 'https://api.mangadex.org';
+  static const _proxyBaseUrl = String.fromEnvironment('MANGADEX_PROXY_BASE');
+  static String get _baseUrl =>
+      _proxyBaseUrl.isNotEmpty ? _proxyBaseUrl : _directBaseUrl;
   static const _timeout = Duration(seconds: 10);
 
   static List<Manga>? _cachedTrending;
