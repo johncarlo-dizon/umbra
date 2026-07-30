@@ -217,32 +217,44 @@ class _MangaReaderScreenState extends State<MangaReaderScreen> {
         );
 
       case _LoadState.loaded:
-        // Continuous vertical scroll — each image constrained to the
-        // full screen width, height auto-scales to preserve aspect
-        // ratio. This is what actually fixes the cutoff: the image now
-        // has a real bounded width to scale against.
-        return ListView.builder(
-          controller: _scrollController,
-          itemCount: _pageUrls.length,
-          itemBuilder: (context, index) {
-            return CachedNetworkImage(
-              imageUrl: _pageUrls[index],
-              fit: BoxFit.fitWidth,
-              width: double.infinity,
-              placeholder: (context, url) => const SizedBox(
-                height: 400,
-                child: Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                ),
-              ),
-              errorWidget: (context, url, error) => const SizedBox(
-                height: 200,
-                child: Center(
-                  child: Icon(
-                    Icons.broken_image_outlined,
-                    color: Colors.white,
-                    size: 48,
-                  ),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            // Cap reading width on large screens so pages read like a
+            // single continuous webtoon strip instead of stretching edge
+            // to edge — matches how webtoon apps present vertical scroll.
+            final readerWidth = constraints.maxWidth > 700
+                ? 700.0
+                : constraints.maxWidth;
+
+            return Center(
+              child: SizedBox(
+                width: readerWidth,
+                child: ListView.builder(
+                  controller: _scrollController,
+                  itemCount: _pageUrls.length,
+                  itemBuilder: (context, index) {
+                    return CachedNetworkImage(
+                      imageUrl: _pageUrls[index],
+                      fit: BoxFit.fitWidth,
+                      width: double.infinity,
+                      placeholder: (context, url) => const SizedBox(
+                        height: 400,
+                        child: Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => const SizedBox(
+                        height: 200,
+                        child: Center(
+                          child: Icon(
+                            Icons.broken_image_outlined,
+                            color: Colors.white,
+                            size: 48,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             );
