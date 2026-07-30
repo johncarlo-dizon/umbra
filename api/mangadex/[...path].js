@@ -7,6 +7,11 @@ module.exports = async (req, res) => {
     return;
   }
 
+  if (req.query.debug) {
+    res.status(200).json({ rawUrl: req.url, query: req.query });
+    return;
+  }
+
   const prefix = '/api/mangadex/';
   const idx = req.url.indexOf(prefix);
   const rawTail = idx !== -1 ? req.url.slice(idx + prefix.length) : '';
