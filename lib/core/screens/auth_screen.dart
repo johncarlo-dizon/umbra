@@ -84,7 +84,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 const SizedBox(height: 8),
                 Text(
                   isSignIn
-                      ? 'Sync bookmarks and progress across devices'
+                      ? 'One account works across all Umbra apps'
                       : 'One account works across all Umbra apps',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
