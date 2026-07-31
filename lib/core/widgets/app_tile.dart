@@ -39,7 +39,7 @@ class AppTile extends StatelessWidget {
     return Card(
       elevation: 3,
       shadowColor: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.12),
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),

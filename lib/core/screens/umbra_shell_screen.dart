@@ -6,8 +6,10 @@ import '../supabase_client.dart';
 import '../widgets/app_tile.dart';
 import '../theme.dart';
 import '../shell_nav_state.dart';
+import '../app_settings_state.dart';
 import 'auth_screen.dart';
 import 'dev_screen.dart';
+import 'settings_screen.dart';
 
 class UmbraShellScreen extends StatefulWidget {
   const UmbraShellScreen({super.key});
@@ -72,24 +74,42 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(child: _buildSelectedTab()),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedNavIndex,
-        onDestinationSelected: (index) {
-          setState(() => _selectedNavIndex = index);
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-          NavigationDestination(icon: Icon(Icons.code_rounded), label: 'Dev'),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            label: 'Settings',
-          ),
-        ],
-      ),
+      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return ValueListenableBuilder<NavBarStyle>(
+      valueListenable: AppSettingsState.navBarStyle,
+      builder: (context, style, _) {
+        if (style == NavBarStyle.floating) {
+          return _FloatingNavBar(
+            selectedIndex: _selectedNavIndex,
+            onSelect: (index) => setState(() => _selectedNavIndex = index),
+          );
+        }
+        return NavigationBar(
+          selectedIndex: _selectedNavIndex,
+          onDestinationSelected: (index) {
+            setState(() => _selectedNavIndex = index);
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              label: 'Profile',
+            ),
+            NavigationDestination(icon: Icon(Icons.code_rounded), label: 'Dev'),
+            NavigationDestination(
+              icon: Icon(Icons.settings_outlined),
+              label: 'Settings',
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -100,7 +120,7 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
       case 2:
         return const DevScreen();
       case 3:
-        return const Center(child: Text('Settings — coming soon'));
+        return const SettingsScreen();
       case 0:
       default:
         return _buildHomeTab();
@@ -197,9 +217,7 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
                                     : _greeting,
                                 style: Theme.of(context).textTheme.headlineSmall
                                     ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onPrimary,
+                                      color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                     ),
                               ),
@@ -210,10 +228,9 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
                                     : 'One hub for all your apps',
                                 style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary
-                                          .withValues(alpha: 0.9),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.85,
+                                      ),
                                     ),
                               ),
                             ],
@@ -228,7 +245,7 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
                   sliver: SliverToBoxAdapter(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
@@ -244,7 +261,11 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
                         },
                         decoration: InputDecoration(
                           hintText: 'Search apps',
-                          hintStyle: TextStyle(color: Colors.grey.shade500),
+                          hintStyle: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                           prefixIcon: Padding(
                             padding: const EdgeInsets.all(10),
                             child: Container(
@@ -262,7 +283,7 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
                             ),
                           ),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: Theme.of(context).colorScheme.surface,
                           contentPadding: const EdgeInsets.symmetric(
                             vertical: 14,
                           ),
@@ -322,6 +343,96 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _FloatingNavBar extends StatelessWidget {
+  final int selectedIndex;
+  final ValueChanged<int> onSelect;
+
+  const _FloatingNavBar({required this.selectedIndex, required this.onSelect});
+
+  static const _items = [
+    (icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home'),
+    (
+      icon: Icons.person_outline,
+      activeIcon: Icons.person_rounded,
+      label: 'Profile',
+    ),
+    (icon: Icons.code_rounded, activeIcon: Icons.code_rounded, label: 'Dev'),
+    (
+      icon: Icons.settings_outlined,
+      activeIcon: Icons.settings_rounded,
+      label: 'Settings',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(_items.length, (index) {
+              final item = _items[index];
+              final isSelected = selectedIndex == index;
+              return GestureDetector(
+                onTap: () => onSelect(index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSelected ? 16 : 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.orange.withValues(alpha: 0.15)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isSelected ? item.activeIcon : item.icon,
+                        size: 22,
+                        color: isSelected
+                            ? AppColors.orange
+                            : Theme.of(context).colorScheme.outline,
+                      ),
+                      if (isSelected) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          item.label,
+                          style: const TextStyle(
+                            color: AppColors.orange,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
     );
   }
 }

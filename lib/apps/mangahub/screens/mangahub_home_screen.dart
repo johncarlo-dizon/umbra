@@ -186,7 +186,7 @@ class _MangaHubHomeScreenState extends State<MangaHubHomeScreen>
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(28),
                           boxShadow: [
                             BoxShadow(
@@ -203,7 +203,11 @@ class _MangaHubHomeScreenState extends State<MangaHubHomeScreen>
                           style: Theme.of(context).textTheme.bodyLarge,
                           decoration: InputDecoration(
                             hintText: 'Search titles, genres, authors',
-                            hintStyle: TextStyle(color: Colors.grey.shade500),
+                            hintStyle: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
                             prefixIcon: Padding(
                               padding: const EdgeInsets.all(10),
                               child: Container(
@@ -247,7 +251,7 @@ class _MangaHubHomeScreenState extends State<MangaHubHomeScreen>
                                   )
                                 : null,
                             filled: true,
-                            fillColor: Colors.white,
+                            fillColor: Theme.of(context).colorScheme.surface,
                             contentPadding: const EdgeInsets.symmetric(
                               vertical: 14,
                             ),
@@ -332,7 +336,9 @@ class _MangaHubHomeScreenState extends State<MangaHubHomeScreen>
                       backgroundColor: AppColors.orange.withValues(alpha: 0.10),
                       side: BorderSide.none,
                       labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : AppColors.navy,
+                        color: isSelected
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                       padding: const EdgeInsets.symmetric(
