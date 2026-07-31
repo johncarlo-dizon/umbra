@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 
-/// Umbra's brand palette — warm terracotta/orange accent on a
-/// cream background, with a dark espresso-brown for hero/contrast
-/// sections. Inspired by warm coffee-app aesthetics: cozy, premium,
-/// not the default Material purple.
 class AppColors {
   AppColors._();
 
-  static const terracotta = Color(0xFFD2691E);
-  static const terracottaLight = Color(0xFFE8A15C);
-  static const espresso = Color(0xFF2B1B12);
-  static const espressoLight = Color(0xFF3D2A1D);
-  static const cream = Color(0xFFFAF6F1);
-  static const creamCard = Color(0xFFFFFFFF);
+  static const navy = Color(0xFF141B4D);
+  static const navyLight = Color(0xFF1F2A6B);
+  static const orange = Color(0xFFFF7A1A);
+  static const orangeLight = Color(0xFFFFA45C);
+  static const background = Color(0xFFF4F6FB);
+  static const card = Color(0xFFFFFFFF);
 }
 
 class AppTheme {
@@ -20,54 +16,70 @@ class AppTheme {
 
   static ThemeData get light {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.terracotta,
+      seedColor: AppColors.orange,
       brightness: Brightness.light,
-      primary: AppColors.terracotta,
-      surface: AppColors.cream,
+      primary: AppColors.orange,
+      surface: AppColors.background,
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: AppColors.cream,
+      scaffoldBackgroundColor: AppColors.background,
       appBarTheme: const AppBarTheme(
         centerTitle: true,
         elevation: 0,
-        backgroundColor: AppColors.cream,
+        backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
+        foregroundColor: AppColors.navy,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: AppColors.creamCard,
-        indicatorColor: AppColors.terracotta.withValues(alpha: 0.15),
+        backgroundColor: AppColors.card,
+        indicatorColor: AppColors.orange.withValues(alpha: 0.15),
         surfaceTintColor: Colors.transparent,
+        elevation: 2,
       ),
       cardTheme: CardThemeData(
-        elevation: 0,
-        color: AppColors.creamCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 4,
+        shadowColor: AppColors.navy.withValues(alpha: 0.18),
+        surfaceTintColor: Colors.transparent,
+        color: AppColors.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.terracotta,
+          backgroundColor: AppColors.orange,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(30),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          textStyle: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.navy,
+          side: const BorderSide(color: AppColors.navy, width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.espresso.withValues(alpha: 0.05),
-        selectedColor: AppColors.terracotta,
-        labelStyle: const TextStyle(color: AppColors.espresso),
+        backgroundColor: AppColors.navy.withValues(alpha: 0.05),
+        selectedColor: AppColors.orange,
+        labelStyle: const TextStyle(color: AppColors.navy),
         secondaryLabelStyle: const TextStyle(color: Colors.white),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.creamCard,
+        fillColor: AppColors.card,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
         ),
       ),
@@ -76,9 +88,9 @@ class AppTheme {
 
   static ThemeData get dark {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.terracotta,
+      seedColor: AppColors.orange,
       brightness: Brightness.dark,
-      primary: AppColors.terracottaLight,
+      primary: AppColors.orangeLight,
     );
 
     return ThemeData(
@@ -87,7 +99,7 @@ class AppTheme {
       appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
       cardTheme: CardThemeData(
         elevation: 1,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
     );
   }

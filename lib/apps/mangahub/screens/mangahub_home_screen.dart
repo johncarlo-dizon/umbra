@@ -28,6 +28,7 @@ class _MangaHubHomeScreenState extends State<MangaHubHomeScreen>
   bool _isSearching = false;
   final _searchController = TextEditingController();
   final _continueReadingKey = GlobalKey<_ContinueReadingRowState>();
+
   List<Map<String, String>> _genres = [];
   String? _selectedGenreId;
   String? _selectedGenreName;
@@ -96,14 +97,12 @@ class _MangaHubHomeScreenState extends State<MangaHubHomeScreen>
       if (!mounted) return;
       setState(() => _genres = genres);
     } catch (_) {
-      // Silent failure — genre chips just won't show. Not critical
-      // enough to block the rest of the screen with an error state.
+      // Silent failure — genre chips just won't show.
     }
   }
 
   Future<void> _selectGenre(String tagId, String name) async {
     if (_selectedGenreId == tagId) {
-      // Tapping the same genre again clears the filter.
       setState(() {
         _selectedGenreId = null;
         _selectedGenreName = null;
@@ -135,7 +134,7 @@ class _MangaHubHomeScreenState extends State<MangaHubHomeScreen>
   }
 
   Future<void> _onSearchChanged(String query) async {
-    setState(() {}); // refresh clear-button visibility as text changes
+    setState(() {});
     if (query.trim().isEmpty) {
       setState(() {
         _searchResults = null;
@@ -187,10 +186,15 @@ class _MangaHubHomeScreenState extends State<MangaHubHomeScreen>
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerHighest,
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.navy.withValues(alpha: 0.08),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
                         child: TextField(
                           controller: _searchController,
@@ -199,16 +203,24 @@ class _MangaHubHomeScreenState extends State<MangaHubHomeScreen>
                           style: Theme.of(context).textTheme.bodyLarge,
                           decoration: InputDecoration(
                             hintText: 'Search titles, genres, authors',
-                            hintStyle: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.search,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
+                            hintStyle: TextStyle(color: Colors.grey.shade500),
+                            prefixIcon: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: AppColors.orange.withValues(
+                                    alpha: 0.15,
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.search,
+                                  size: 18,
+                                  color: AppColors.orange,
+                                ),
+                              ),
                             ),
                             suffixIcon: _isSearching
                                 ? Padding(
@@ -235,7 +247,7 @@ class _MangaHubHomeScreenState extends State<MangaHubHomeScreen>
                                   )
                                 : null,
                             filled: true,
-                            fillColor: Colors.transparent,
+                            fillColor: Colors.white,
                             contentPadding: const EdgeInsets.symmetric(
                               vertical: 14,
                             ),
@@ -316,10 +328,16 @@ class _MangaHubHomeScreenState extends State<MangaHubHomeScreen>
                     return ChoiceChip(
                       label: Text(genre['name']!),
                       selected: isSelected,
-                      selectedColor: AppColors.terracotta,
+                      selectedColor: AppColors.orange,
+                      backgroundColor: AppColors.orange.withValues(alpha: 0.10),
+                      side: BorderSide.none,
                       labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : AppColors.espresso,
-                        fontWeight: FontWeight.w500,
+                        color: isSelected ? Colors.white : AppColors.navy,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
                       ),
                       onSelected: (_) =>
                           _selectGenre(genre['id']!, genre['name']!),

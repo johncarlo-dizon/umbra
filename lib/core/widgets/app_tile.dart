@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// A single sub-app tile shown in the Umbra shell's "Your apps" section.
-/// Used for both live apps (MangaHub) and the "coming soon" placeholder.
 class AppTile extends StatelessWidget {
   final IconData icon;
   final String name;
@@ -23,6 +21,7 @@ class AppTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final tileColor = color ?? colorScheme.primary;
 
     if (isPlaceholder) {
       return DottedBorderCard(
@@ -32,14 +31,18 @@ class AppTile extends StatelessWidget {
           description: description,
           iconColor: colorScheme.outline,
           textColor: colorScheme.outline,
+          iconBgColor: Colors.transparent,
         ),
       );
     }
 
     return Card(
+      elevation: 3,
+      shadowColor: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.12),
+      color: Colors.white,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -49,8 +52,9 @@ class AppTile extends StatelessWidget {
                   icon: icon,
                   name: name,
                   description: description,
-                  iconColor: colorScheme.primary,
+                  iconColor: tileColor,
                   textColor: colorScheme.onSurface,
+                  iconBgColor: tileColor.withValues(alpha: 0.15),
                 ),
               ),
               Icon(Icons.chevron_right, color: colorScheme.outline),
@@ -68,6 +72,7 @@ class _TileContent extends StatelessWidget {
   final String description;
   final Color iconColor;
   final Color textColor;
+  final Color iconBgColor;
 
   const _TileContent({
     required this.icon,
@@ -75,14 +80,23 @@ class _TileContent extends StatelessWidget {
     required this.description,
     required this.iconColor,
     required this.textColor,
+    required this.iconBgColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 32, color: iconColor),
-        const SizedBox(width: 12),
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: iconBgColor,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Icon(icon, size: 28, color: iconColor),
+        ),
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,9 +104,10 @@ class _TileContent extends StatelessWidget {
             children: [
               Text(
                 name,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(color: textColor),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
@@ -111,7 +126,6 @@ class _TileContent extends StatelessWidget {
   }
 }
 
-/// Simple dashed-border wrapper for the "coming soon" placeholder tile.
 class DottedBorderCard extends StatelessWidget {
   final Widget child;
 
@@ -122,7 +136,7 @@ class DottedBorderCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: Theme.of(context).colorScheme.outlineVariant,
           width: 1.5,

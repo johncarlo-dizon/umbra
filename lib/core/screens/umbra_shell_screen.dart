@@ -4,10 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../supabase_client.dart';
 import '../widgets/app_tile.dart';
-import 'auth_screen.dart';
-import 'dev_screen.dart';
 import '../theme.dart';
 import '../shell_nav_state.dart';
+import 'auth_screen.dart';
+import 'dev_screen.dart';
 
 class UmbraShellScreen extends StatefulWidget {
   const UmbraShellScreen({super.key});
@@ -27,7 +27,7 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
       name: 'MangaHub',
       description: 'Read manga and webtoons',
       route: '/mangahub',
-      color: AppColors.terracotta,
+      color: AppColors.orange,
     ),
   ];
 
@@ -39,12 +39,17 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
     });
     ShellNavState.requestedTabIndex.addListener(_handleTabRequest);
 
-    // Check for a request that was set BEFORE this screen existed
-    // (e.g. tapped from MangaHub) — the listener alone only catches
-    // changes that happen after this point, not ones already pending.
     final pending = ShellNavState.requestedTabIndex.value;
     if (pending != null) {
       _selectedNavIndex = pending;
+      ShellNavState.requestedTabIndex.value = null;
+    }
+  }
+
+  void _handleTabRequest() {
+    final requested = ShellNavState.requestedTabIndex.value;
+    if (requested != null) {
+      setState(() => _selectedNavIndex = requested);
       ShellNavState.requestedTabIndex.value = null;
     }
   }
@@ -54,14 +59,6 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
     _authSubscription?.cancel();
     ShellNavState.requestedTabIndex.removeListener(_handleTabRequest);
     super.dispose();
-  }
-
-  void _handleTabRequest() {
-    final requested = ShellNavState.requestedTabIndex.value;
-    if (requested != null) {
-      setState(() => _selectedNavIndex = requested);
-      ShellNavState.requestedTabIndex.value = null; // consume it
-    }
   }
 
   String get _greeting {
@@ -178,7 +175,7 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
                       gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [AppColors.espresso, AppColors.espressoLight],
+                        colors: [AppColors.navy, AppColors.navyLight],
                       ),
                     ),
                     child: Row(
@@ -227,29 +224,59 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
                   ),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                   sliver: SliverToBoxAdapter(
-                    child: TextField(
-                      onChanged: (value) {
-                        setState(() => _searchQuery = value);
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Search apps',
-                        prefixIcon: const Icon(Icons.search),
-                        filled: true,
-                        fillColor: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.navy.withValues(alpha: 0.08),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        onChanged: (value) {
+                          setState(() => _searchQuery = value);
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Search apps',
+                          hintStyle: TextStyle(color: Colors.grey.shade500),
+                          prefixIcon: Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: AppColors.orange.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.search,
+                                size: 18,
+                                color: AppColors.orange,
+                              ),
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
                   sliver: SliverToBoxAdapter(
                     child: Text(
                       'Your apps',
