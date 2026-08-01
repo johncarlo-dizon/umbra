@@ -110,10 +110,56 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
     });
   }
 
+  void _closeSearch() {
+    setState(() {
+      _searchExpanded = false;
+      _searchQuery = '';
+    });
+  }
+
+  List<_AppEntry> get _searchResults {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return const [];
+    return _apps
+        .where((app) => app.name.toLowerCase().contains(query))
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Note: on the wide/desktop taskbar the search field is always visible
+    // and never goes through _toggleSearch, so _searchExpanded stays false
+    // while typing there — panel visibility must depend only on the query.
+    final showResultsPanel = _searchQuery.trim().isNotEmpty;
+
     return Scaffold(
-      body: SafeArea(child: _buildSelectedTab()),
+      // The panel lives inside the body's Stack rather than
+      // Scaffold.bottomSheet, so it can be a narrow flyout anchored above
+      // the search box's left edge (like Windows' taskbar search flyout)
+      // instead of a full-width sheet stretching across the screen.
+      // Positioning it at bottom:0 of the body already lines it up right
+      // above the taskbar, since Scaffold shrinks body to exclude
+      // bottomNavigationBar's height.
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Positioned.fill(child: _buildSelectedTab()),
+            if (showResultsPanel)
+              Positioned(
+                left: 12,
+                bottom: 8,
+                child: _SearchResultsPanel(
+                  results: _searchResults,
+                  query: _searchQuery,
+                  onSelect: (app) {
+                    _closeSearch();
+                    context.push(app.route);
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
       bottomNavigationBar: _TaskbarNav(
         selectedIndex: _selectedNavIndex,
         onSelect: (index) => setState(() => _selectedNavIndex = index),
@@ -176,15 +222,14 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
   // Home tab: wallpaper behind app icons ONLY — no greeting, no search
   // (both moved to the taskbar). Mobile centers a scrolling grid; desktop
   // anchors icons top-left in columns, like an actual desktop.
+  //
+  // The grid always shows every app, unfiltered — searching no longer
+  // hides icons here, it surfaces matches in the floating panel above the
+  // taskbar instead, the same way desktop search doesn't rearrange your
+  // desktop icons while you type.
   // ---------------------------------------------------------------------
 
   Widget _buildHomeTab() {
-    final filteredApps = _apps
-        .where(
-          (app) => app.name.toLowerCase().contains(_searchQuery.toLowerCase()),
-        )
-        .toList();
-
     return ValueListenableBuilder<HomeWallpaper>(
       valueListenable: AppSettingsState.homeWallpaper,
       builder: (context, wallpaper, _) {
@@ -209,9 +254,7 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
                     color: Colors.black.withValues(alpha: 0.18),
                   ),
                 ),
-                isDesktop
-                    ? _buildDesktopHome(filteredApps)
-                    : _buildMobileHome(filteredApps),
+                isDesktop ? _buildDesktopHome() : _buildMobileHome(),
               ],
             );
           },
@@ -221,7 +264,7 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
   }
 
   /// Mobile: centered, scrolling icon grid — just the apps, nothing else.
-  Widget _buildMobileHome(List<_AppEntry> filteredApps) {
+  Widget _buildMobileHome() {
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -230,8 +273,8 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
         crossAxisSpacing: 8,
         childAspectRatio: 0.72,
       ),
-      itemCount: filteredApps.length + 1,
-      itemBuilder: (context, index) => _appOrPlaceholder(index, filteredApps),
+      itemCount: _apps.length + 1,
+      itemBuilder: (context, index) => _appOrPlaceholder(index),
     );
   }
 
@@ -239,7 +282,7 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
   /// a new column when they run out of vertical room — matching the
   /// column arrangement of an actual Windows desktop, not a row-wrapping
   /// grid.
-  Widget _buildDesktopHome(List<_AppEntry> filteredApps) {
+  Widget _buildDesktopHome() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(32, 28, 32, 28),
       child: LayoutBuilder(
@@ -255,11 +298,9 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
                   spacing: 24,
                   runSpacing: 28,
                   children: List.generate(
-                    filteredApps.length + 1,
-                    (index) => SizedBox(
-                      width: 88,
-                      child: _appOrPlaceholder(index, filteredApps),
-                    ),
+                    _apps.length + 1,
+                    (index) =>
+                        SizedBox(width: 88, child: _appOrPlaceholder(index)),
                   ),
                 ),
               ),
@@ -270,9 +311,9 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
     );
   }
 
-  Widget _appOrPlaceholder(int index, List<_AppEntry> filteredApps) {
-    if (index < filteredApps.length) {
-      final app = filteredApps[index];
+  Widget _appOrPlaceholder(int index) {
+    if (index < _apps.length) {
+      final app = _apps[index];
       return AppTile(
         icon: app.icon,
         name: app.name,
@@ -290,13 +331,87 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
   }
 }
 
+/// Floating panel of search matches, hovering directly above the taskbar
+/// via Scaffold.bottomSheet — never covers the whole screen, never
+/// reshuffles the Home grid underneath it.
+class _SearchResultsPanel extends StatelessWidget {
+  final List<_AppEntry> results;
+  final String query;
+  final ValueChanged<_AppEntry> onSelect;
+
+  const _SearchResultsPanel({
+    required this.results,
+    required this.query,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Container(
+      width: (screenWidth - 24).clamp(0, 340),
+      constraints: const BoxConstraints(maxHeight: 280),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.outlineVariant, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 24,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: results.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Row(
+                children: [
+                  Icon(Icons.search_off, color: scheme.onSurfaceVariant),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'No apps match "$query"',
+                      style: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : ListView.separated(
+              shrinkWrap: true,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: results.length,
+              separatorBuilder: (context, index) =>
+                  Divider(height: 1, color: scheme.outlineVariant),
+              itemBuilder: (context, index) {
+                final app = results[index];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: app.color.withValues(alpha: 0.16),
+                    child: Icon(app.icon, color: app.color),
+                  ),
+                  title: Text(app.name),
+                  subtitle: Text(app.description),
+                  onTap: () => onSelect(app),
+                );
+              },
+            ),
+    );
+  }
+}
+
 /// The single taskbar — no more "standard vs floating" choice, because a
 /// real OS taskbar doesn't have that toggle either: it's a plain full-width
 /// bar, search box near the start, then icon buttons packed tightly right
 /// next to each other (not spread across the remaining width), each one
 /// showing a small underline when it's the active tab instead of a
 /// text label — closer to how Windows shows an indicator under an open
-/// app's pinned icon than to a Material bottom-nav bar.
+/// app's pinned icon than to a Material bottom-nav bar. A live clock sits
+/// on the opposite end, the same corner a real taskbar clock lives in.
 class _TaskbarNav extends StatefulWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelect;
@@ -385,19 +500,24 @@ class _TaskbarNavState extends State<_TaskbarNav> {
 
             if (wide) {
               // Desktop-width taskbar: search box permanently visible,
-              // icon cluster packed right next to it — not spread across
-              // the bar, just like a real taskbar's pinned-icon group.
+              // icon cluster packed right next to it, clock pinned to the
+              // far end — just like a real taskbar's search-icons-clock
+              // layout.
               return Row(
                 children: [
                   SizedBox(width: 200, child: _searchField(context)),
                   const SizedBox(width: 12),
                   ..._iconButtons(context),
+                  const Spacer(),
+                  const _LiveClock(),
                 ],
               );
             }
 
             // Narrow/mobile taskbar: search collapses to an icon; the icon
-            // cluster still stays tightly packed, just right after it.
+            // cluster still stays tightly packed, just right after it. The
+            // clock hides while search is expanded so it doesn't fight the
+            // text field for space, and shows compactly otherwise.
             if (widget.searchExpanded) {
               return Row(
                 children: [
@@ -419,6 +539,8 @@ class _TaskbarNavState extends State<_TaskbarNav> {
                 ),
                 const SizedBox(width: 4),
                 ..._iconButtons(context),
+                const Spacer(),
+                const _LiveClock(compact: true),
               ],
             );
           },
@@ -506,6 +628,131 @@ class _TaskbarNavState extends State<_TaskbarNav> {
         ),
       );
     });
+  }
+}
+
+/// Live clock/date, ticking once a minute (no need for per-second
+/// rebuilds on a taskbar readout), shown at the opposite end of the
+/// taskbar from search — the same corner a system clock occupies.
+class _LiveClock extends StatefulWidget {
+  final bool compact;
+
+  const _LiveClock({this.compact = false});
+
+  @override
+  State<_LiveClock> createState() => _LiveClockState();
+}
+
+class _LiveClockState extends State<_LiveClock> {
+  late DateTime _now;
+  Timer? _timer;
+
+  static const _weekdayNames = [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
+  static const _monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _now = DateTime.now();
+    // Align the first tick to the next minute boundary, then tick once a
+    // minute after that — plenty for a clock nobody needs second-accurate.
+    final msToNextMinute = 60000 - (_now.second * 1000 + _now.millisecond);
+    Timer(Duration(milliseconds: msToNextMinute), () {
+      if (!mounted) return;
+      setState(() => _now = DateTime.now());
+      _timer = Timer.periodic(const Duration(minutes: 1), (_) {
+        if (mounted) setState(() => _now = DateTime.now());
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _timeLabel() {
+    final hour24 = _now.hour;
+    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+    final minute = _now.minute.toString().padLeft(2, '0');
+    final period = hour24 < 12 ? 'AM' : 'PM';
+    return '$hour12:$minute $period';
+  }
+
+  String _dateLabel() {
+    final weekday = _weekdayNames[_now.weekday - 1];
+    final month = _monthNames[_now.month - 1];
+    return '$weekday, $month ${_now.day}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    if (widget.compact) {
+      // Narrow taskbar: just the time, small, to avoid crowding the icons.
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Text(
+          _timeLabel(),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _timeLabel(),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              height: 1.1,
+              color: scheme.onSurface,
+            ),
+          ),
+          Text(
+            _dateLabel(),
+            style: TextStyle(
+              fontSize: 11,
+              height: 1.1,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
