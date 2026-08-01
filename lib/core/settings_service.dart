@@ -10,6 +10,7 @@ class SettingsService {
 
   static const _darkModeKey = 'settings_dark_mode';
   static const _navStyleKey = 'settings_nav_style';
+  static const _recentUnitCategoriesKey = 'settings_recent_unit_categories';
 
   static Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -24,6 +25,9 @@ class SettingsService {
       (s) => s.name == styleName,
       orElse: () => NavBarStyle.standard,
     );
+
+    AppSettingsState.recentUnitCategoryIds.value =
+        prefs.getStringList(_recentUnitCategoriesKey) ?? [];
   }
 
   static Future<void> setDarkMode(bool isDark) async {
@@ -38,5 +42,10 @@ class SettingsService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_navStyleKey, style.name);
     AppSettingsState.navBarStyle.value = style;
+  }
+
+  static Future<void> setRecentUnitCategoryIds(List<String> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_recentUnitCategoriesKey, ids);
   }
 }

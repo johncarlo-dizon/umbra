@@ -38,6 +38,20 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
       route: '/workouts',
       color: Colors.teal,
     ),
+    _AppEntry(
+      icon: Icons.calculate_outlined,
+      name: 'Calculator',
+      description: 'Quick everyday calculations',
+      route: '/calculator',
+      color: AppColors.orange, // or a new distinct color
+    ),
+    _AppEntry(
+      icon: Icons.swap_horiz,
+      name: 'Unit Converter',
+      description: 'Length, weight, temperature & more',
+      route: '/unit-converter',
+      color: Colors.teal,
+    ),
   ];
 
   @override

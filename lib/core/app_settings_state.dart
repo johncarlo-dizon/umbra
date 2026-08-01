@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'settings_service.dart';
 
 enum NavBarStyle { standard, floating }
 
@@ -15,4 +16,18 @@ class AppSettingsState {
   static final ValueNotifier<NavBarStyle> navBarStyle = ValueNotifier(
     NavBarStyle.standard,
   );
+
+  /// Most-recently-used Unit Converter category ids, most recent first.
+  /// Capped at 4 so the "Recent" row never overflows on small screens.
+  static final ValueNotifier<List<String>> recentUnitCategoryIds =
+      ValueNotifier(<String>[]);
+
+  static void markUnitCategoryUsed(String categoryId) {
+    final updated = [
+      categoryId,
+      ...recentUnitCategoryIds.value.where((id) => id != categoryId),
+    ].take(4).toList();
+    recentUnitCategoryIds.value = updated;
+    SettingsService.setRecentUnitCategoryIds(updated);
+  }
 }
