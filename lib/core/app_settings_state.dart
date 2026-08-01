@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'settings_service.dart';
-
-enum NavBarStyle { standard, floating }
+import 'wallpapers.dart';
 
 /// Holds the app's live settings as ValueNotifiers so any widget can
 /// react instantly when they change, without threading state through
@@ -13,8 +12,11 @@ class AppSettingsState {
   static final ValueNotifier<ThemeMode> themeMode = ValueNotifier(
     ThemeMode.light,
   );
-  static final ValueNotifier<NavBarStyle> navBarStyle = ValueNotifier(
-    NavBarStyle.standard,
+
+  /// Selected Home tab wallpaper. Device-local, independent of account —
+  /// same reasoning as theme mode.
+  static final ValueNotifier<HomeWallpaper> homeWallpaper = ValueNotifier(
+    HomeWallpaper.wallpaper1,
   );
 
   /// Most-recently-used Unit Converter category ids, most recent first.

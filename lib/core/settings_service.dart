@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app_settings_state.dart';
+import 'wallpapers.dart';
 
 /// Reads/writes settings to on-device storage. Deliberately separate
 /// from Supabase — these are device-local preferences, not synced
@@ -9,7 +10,7 @@ class SettingsService {
   SettingsService._();
 
   static const _darkModeKey = 'settings_dark_mode';
-  static const _navStyleKey = 'settings_nav_style';
+  static const _wallpaperKey = 'settings_home_wallpaper';
   static const _recentUnitCategoriesKey = 'settings_recent_unit_categories';
 
   static Future<void> load() async {
@@ -20,10 +21,10 @@ class SettingsService {
         ? ThemeMode.dark
         : ThemeMode.light;
 
-    final styleName = prefs.getString(_navStyleKey);
-    AppSettingsState.navBarStyle.value = NavBarStyle.values.firstWhere(
-      (s) => s.name == styleName,
-      orElse: () => NavBarStyle.standard,
+    final wallpaperName = prefs.getString(_wallpaperKey);
+    AppSettingsState.homeWallpaper.value = HomeWallpaper.values.firstWhere(
+      (w) => w.name == wallpaperName,
+      orElse: () => HomeWallpaper.wallpaper1,
     );
 
     AppSettingsState.recentUnitCategoryIds.value =
@@ -38,10 +39,10 @@ class SettingsService {
         : ThemeMode.light;
   }
 
-  static Future<void> setNavBarStyle(NavBarStyle style) async {
+  static Future<void> setHomeWallpaper(HomeWallpaper wallpaper) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_navStyleKey, style.name);
-    AppSettingsState.navBarStyle.value = style;
+    await prefs.setString(_wallpaperKey, wallpaper.name);
+    AppSettingsState.homeWallpaper.value = wallpaper;
   }
 
   static Future<void> setRecentUnitCategoryIds(List<String> ids) async {

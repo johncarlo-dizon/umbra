@@ -1,5 +1,19 @@
 import 'package:flutter/material.dart';
 
+/// A single home-screen icon tile: a colored rounded-square badge with the
+/// icon, and the app name as a label underneath — styled to sit directly on
+/// the Home tab's photo wallpaper rather than a card.
+///
+/// Label text and icon glyph color are intentionally hardcoded white with a
+/// drop shadow here, breaking the normal "never hardcode colors" rule —
+/// justified the same way the shell's navy hero header is: this tile's
+/// background is a fixed photograph, not a theme-following `colorScheme`
+/// surface, so it needs to stay legible against *any* wallpaper rather than
+/// adapting to light/dark mode.
+///
+/// [description] is no longer printed inline (there's no card to put it
+/// in) — it now surfaces as a hover tooltip, matching how real desktop
+/// icons reveal their info on hover instead of always showing text.
 class AppTile extends StatelessWidget {
   final IconData icon;
   final String name;
@@ -20,129 +34,74 @@ class AppTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final tileColor = color ?? colorScheme.primary;
+    final tileColor = color ?? Theme.of(context).colorScheme.primary;
 
-    if (isPlaceholder) {
-      return DottedBorderCard(
-        child: _TileContent(
-          icon: icon,
-          name: name,
-          description: description,
-          iconColor: colorScheme.outline,
-          textColor: colorScheme.outline,
-          iconBgColor: Colors.transparent,
-        ),
-      );
-    }
-
-    return Card(
-      elevation: 3,
-      shadowColor: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.12),
-      color: Theme.of(context).colorScheme.surface,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: _TileContent(
-                  icon: icon,
-                  name: name,
-                  description: description,
-                  iconColor: tileColor,
-                  textColor: colorScheme.onSurface,
-                  iconBgColor: tileColor.withValues(alpha: 0.15),
-                ),
+    final tile = InkWell(
+      onTap: isPlaceholder ? null : onTap,
+      borderRadius: BorderRadius.circular(22),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                color: isPlaceholder
+                    ? Colors.white.withValues(alpha: 0.14)
+                    : tileColor,
+                borderRadius: BorderRadius.circular(18),
+                border: isPlaceholder
+                    ? Border.all(
+                        color: Colors.white.withValues(alpha: 0.55),
+                        width: 1.5,
+                      )
+                    : null,
+                boxShadow: isPlaceholder
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
               ),
-              Icon(Icons.chevron_right, color: colorScheme.outline),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TileContent extends StatelessWidget {
-  final IconData icon;
-  final String name;
-  final String description;
-  final Color iconColor;
-  final Color textColor;
-  final Color iconBgColor;
-
-  const _TileContent({
-    required this.icon,
-    required this.name,
-    required this.description,
-    required this.iconColor,
-    required this.textColor,
-    required this.iconBgColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: iconBgColor,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Icon(icon, size: 28, color: iconColor),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
+              child: Icon(icon, size: 26, color: Colors.white),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: 78,
+              child: Text(
                 name,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: textColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                description,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: textColor.withValues(alpha: 0.7),
-                ),
+                textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                  color: Colors.white,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black54,
+                      blurRadius: 6,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class DottedBorderCard extends StatelessWidget {
-  final Widget child;
-
-  const DottedBorderCard({super.key, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
-          width: 1.5,
+            ),
+          ],
         ),
       ),
-      child: child,
+    );
+
+    return Tooltip(
+      message: description,
+      waitDuration: const Duration(milliseconds: 500),
+      child: tile,
     );
   }
 }

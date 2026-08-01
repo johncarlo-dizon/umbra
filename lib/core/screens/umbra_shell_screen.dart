@@ -7,9 +7,19 @@ import '../widgets/app_tile.dart';
 import '../theme.dart';
 import '../shell_nav_state.dart';
 import '../app_settings_state.dart';
+import '../wallpapers.dart';
 import 'auth_screen.dart';
 import 'dev_screen.dart';
 import 'settings_screen.dart';
+
+/// Screen width above which the Home tab switches from a mobile-style
+/// centered/scrolling icon grid to a desktop-style top-left icon grid.
+const double _desktopBreakpoint = 700;
+
+/// Taskbar width above which the search box stays permanently expanded
+/// inline (like Windows 11's taskbar search box) instead of collapsing to
+/// an icon that expands on tap (the mobile pattern).
+const double _taskbarWideBreakpoint = 480;
 
 class UmbraShellScreen extends StatefulWidget {
   const UmbraShellScreen({super.key});
@@ -21,6 +31,7 @@ class UmbraShellScreen extends StatefulWidget {
 class _UmbraShellScreenState extends State<UmbraShellScreen> {
   int _selectedNavIndex = 0;
   String _searchQuery = '';
+  bool _searchExpanded = false;
   StreamSubscription<AuthState>? _authSubscription;
 
   static const List<_AppEntry> _apps = [
@@ -84,53 +95,33 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
     super.dispose();
   }
 
-  String get _greeting {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+  /// Search lives in the taskbar, not the tab content, so toggling it also
+  /// jumps to Home — the same way clicking a taskbar's search box on a real
+  /// desktop brings you to search results regardless of which app/window
+  /// currently has focus, rather than only working while already on Home.
+  void _toggleSearch() {
+    setState(() {
+      _searchExpanded = !_searchExpanded;
+      if (_searchExpanded) {
+        _selectedNavIndex = 0;
+      } else {
+        _searchQuery = '';
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(child: _buildSelectedTab()),
-      bottomNavigationBar: _buildBottomNav(),
-    );
-  }
-
-  Widget _buildBottomNav() {
-    return ValueListenableBuilder<NavBarStyle>(
-      valueListenable: AppSettingsState.navBarStyle,
-      builder: (context, style, _) {
-        if (style == NavBarStyle.floating) {
-          return _FloatingNavBar(
-            selectedIndex: _selectedNavIndex,
-            onSelect: (index) => setState(() => _selectedNavIndex = index),
-          );
-        }
-        return NavigationBar(
-          selectedIndex: _selectedNavIndex,
-          onDestinationSelected: (index) {
-            setState(() => _selectedNavIndex = index);
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              label: 'Profile',
-            ),
-            NavigationDestination(icon: Icon(Icons.code_rounded), label: 'Dev'),
-            NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              label: 'Settings',
-            ),
-          ],
-        );
-      },
+      bottomNavigationBar: _TaskbarNav(
+        selectedIndex: _selectedNavIndex,
+        onSelect: (index) => setState(() => _selectedNavIndex = index),
+        searchExpanded: _searchExpanded,
+        searchQuery: _searchQuery,
+        onSearchToggle: _toggleSearch,
+        onSearchChanged: (value) => setState(() => _searchQuery = value),
+      ),
     );
   }
 
@@ -181,198 +172,154 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
     );
   }
 
+  // ---------------------------------------------------------------------
+  // Home tab: wallpaper behind app icons ONLY — no greeting, no search
+  // (both moved to the taskbar). Mobile centers a scrolling grid; desktop
+  // anchors icons top-left in columns, like an actual desktop.
+  // ---------------------------------------------------------------------
+
   Widget _buildHomeTab() {
-    final isLoggedIn = SupabaseService.isLoggedIn;
-    final userName = SupabaseService.currentSession?.user.email
-        ?.split('@')
-        .first;
     final filteredApps = _apps
         .where(
           (app) => app.name.toLowerCase().contains(_searchQuery.toLowerCase()),
         )
         .toList();
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth;
-        final contentMaxWidth = maxWidth > 900 ? 900.0 : maxWidth;
-        final crossAxisCount = maxWidth >= 900
-            ? 3
-            : maxWidth >= 600
-            ? 2
-            : 1;
+    return ValueListenableBuilder<HomeWallpaper>(
+      valueListenable: AppSettingsState.homeWallpaper,
+      builder: (context, wallpaper, _) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= _desktopBreakpoint;
 
-        return Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: contentMaxWidth),
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Container(
-                    margin: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [AppColors.navy, AppColors.navyLight],
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Image.asset(
-                          'assets/images/logo.png',
-                          width: 44,
-                          height: 44,
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isLoggedIn
-                                    ? '$_greeting, $userName'
-                                    : _greeting,
-                                style: Theme.of(context).textTheme.headlineSmall
-                                    ?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                isLoggedIn
-                                    ? 'Welcome back to Umbra'
-                                    : 'One hub for all your apps',
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.85,
-                                      ),
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  wallpaper.assetPath,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
                   ),
                 ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                  sliver: SliverToBoxAdapter(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.navy.withValues(alpha: 0.08),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        onChanged: (value) {
-                          setState(() => _searchQuery = value);
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Search apps',
-                          hintStyle: TextStyle(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                          prefixIcon: Padding(
-                            padding: const EdgeInsets.all(10),
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: AppColors.orange.withValues(alpha: 0.15),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.search,
-                                size: 18,
-                                color: AppColors.orange,
-                              ),
-                            ),
-                          ),
-                          filled: true,
-                          fillColor: Theme.of(context).colorScheme.surface,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 14,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-                    ),
+                // Soft overall scrim so white icon labels stay legible
+                // against any wallpaper, without needing per-photo tuning.
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.18),
                   ),
                 ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                  sliver: SliverToBoxAdapter(
-                    child: Text(
-                      'Your apps',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                  sliver: SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      mainAxisExtent: 96,
-                    ),
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      if (index < filteredApps.length) {
-                        final app = filteredApps[index];
-                        return AppTile(
-                          icon: app.icon,
-                          name: app.name,
-                          description: app.description,
-                          color: app.color,
-                          onTap: () {
-                            context.push(app.route);
-                          },
-                        );
-                      }
-                      return const AppTile(
-                        icon: Icons.add_circle_outline,
-                        name: 'More apps coming soon',
-                        description: 'New modules launch here',
-                        isPlaceholder: true,
-                      );
-                    }, childCount: filteredApps.length + 1),
-                  ),
-                ),
+                isDesktop
+                    ? _buildDesktopHome(filteredApps)
+                    : _buildMobileHome(filteredApps),
               ],
-            ),
-          ),
+            );
+          },
         );
       },
     );
   }
+
+  /// Mobile: centered, scrolling icon grid — just the apps, nothing else.
+  Widget _buildMobileHome(List<_AppEntry> filteredApps) {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 92,
+        mainAxisSpacing: 18,
+        crossAxisSpacing: 8,
+        childAspectRatio: 0.72,
+      ),
+      itemCount: filteredApps.length + 1,
+      itemBuilder: (context, index) => _appOrPlaceholder(index, filteredApps),
+    );
+  }
+
+  /// Desktop: icons anchored top-left, filling top-to-bottom and starting
+  /// a new column when they run out of vertical room — matching the
+  /// column arrangement of an actual Windows desktop, not a row-wrapping
+  /// grid.
+  Widget _buildDesktopHome(List<_AppEntry> filteredApps) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 28, 32, 28),
+      child: LayoutBuilder(
+        builder: (context, iconAreaConstraints) {
+          return Align(
+            alignment: Alignment.topLeft,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                height: iconAreaConstraints.maxHeight,
+                child: Wrap(
+                  direction: Axis.vertical,
+                  spacing: 24,
+                  runSpacing: 28,
+                  children: List.generate(
+                    filteredApps.length + 1,
+                    (index) => SizedBox(
+                      width: 88,
+                      child: _appOrPlaceholder(index, filteredApps),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _appOrPlaceholder(int index, List<_AppEntry> filteredApps) {
+    if (index < filteredApps.length) {
+      final app = filteredApps[index];
+      return AppTile(
+        icon: app.icon,
+        name: app.name,
+        description: app.description,
+        color: app.color,
+        onTap: () => context.push(app.route),
+      );
+    }
+    return const AppTile(
+      icon: Icons.add_circle_outline,
+      name: 'More soon',
+      description: 'New modules launch here',
+      isPlaceholder: true,
+    );
+  }
 }
 
-class _FloatingNavBar extends StatelessWidget {
+/// The single taskbar — no more "standard vs floating" choice, because a
+/// real OS taskbar doesn't have that toggle either: it's a plain full-width
+/// bar, search box near the start, then icon buttons packed tightly right
+/// next to each other (not spread across the remaining width), each one
+/// showing a small underline when it's the active tab instead of a
+/// text label — closer to how Windows shows an indicator under an open
+/// app's pinned icon than to a Material bottom-nav bar.
+class _TaskbarNav extends StatefulWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelect;
+  final bool searchExpanded;
+  final String searchQuery;
+  final VoidCallback onSearchToggle;
+  final ValueChanged<String> onSearchChanged;
 
-  const _FloatingNavBar({required this.selectedIndex, required this.onSelect});
+  const _TaskbarNav({
+    required this.selectedIndex,
+    required this.onSelect,
+    required this.searchExpanded,
+    required this.searchQuery,
+    required this.onSearchToggle,
+    required this.onSearchChanged,
+  });
+
+  @override
+  State<_TaskbarNav> createState() => _TaskbarNavState();
+}
+
+class _TaskbarNavState extends State<_TaskbarNav> {
+  late final TextEditingController _searchController;
 
   static const _items = [
     (icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home'),
@@ -390,71 +337,175 @@ class _FloatingNavBar extends StatelessWidget {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(text: widget.searchQuery);
+  }
+
+  @override
+  void didUpdateWidget(covariant _TaskbarNav oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Only push external changes (e.g. the query being cleared when search
+    // collapses) into the controller — never overwrite it while the query
+    // change originated from this same field, or the cursor jumps on every
+    // keystroke.
+    if (widget.searchQuery != _searchController.text &&
+        widget.searchQuery.isEmpty) {
+      _searchController.clear();
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(_items.length, (index) {
-              final item = _items[index];
-              final isSelected = selectedIndex == index;
-              return GestureDetector(
-                onTap: () => onSelect(index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isSelected ? 16 : 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.orange.withValues(alpha: 0.15)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isSelected ? item.activeIcon : item.icon,
-                        size: 22,
-                        color: isSelected
-                            ? AppColors.orange
-                            : Theme.of(context).colorScheme.outline,
-                      ),
-                      if (isSelected) ...[
-                        const SizedBox(width: 6),
-                        Text(
-                          item.label,
-                          style: const TextStyle(
-                            color: AppColors.orange,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: LayoutBuilder(
+          builder: (context, barConstraints) {
+            final wide = barConstraints.maxWidth >= _taskbarWideBreakpoint;
+
+            if (wide) {
+              // Desktop-width taskbar: search box permanently visible,
+              // icon cluster packed right next to it — not spread across
+              // the bar, just like a real taskbar's pinned-icon group.
+              return Row(
+                children: [
+                  SizedBox(width: 200, child: _searchField(context)),
+                  const SizedBox(width: 12),
+                  ..._iconButtons(context),
+                ],
               );
-            }),
-          ),
+            }
+
+            // Narrow/mobile taskbar: search collapses to an icon; the icon
+            // cluster still stays tightly packed, just right after it.
+            if (widget.searchExpanded) {
+              return Row(
+                children: [
+                  Expanded(child: _searchField(context, autofocus: true)),
+                  IconButton(
+                    onPressed: widget.onSearchToggle,
+                    icon: Icon(Icons.close, color: scheme.onSurfaceVariant),
+                    tooltip: 'Close search',
+                  ),
+                ],
+              );
+            }
+            return Row(
+              children: [
+                IconButton(
+                  onPressed: widget.onSearchToggle,
+                  icon: Icon(Icons.search, color: scheme.onSurfaceVariant),
+                  tooltip: 'Search apps',
+                ),
+                const SizedBox(width: 4),
+                ..._iconButtons(context),
+              ],
+            );
+          },
         ),
       ),
     );
+  }
+
+  Widget _searchField(BuildContext context, {bool autofocus = false}) {
+    final scheme = Theme.of(context).colorScheme;
+    return TextField(
+      controller: _searchController,
+      autofocus: autofocus,
+      onChanged: widget.onSearchChanged,
+      style: TextStyle(fontSize: 14, color: scheme.onSurface),
+      decoration: InputDecoration(
+        isDense: true,
+        hintText: 'Search apps',
+        hintStyle: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant),
+        prefixIcon: Icon(
+          Icons.search,
+          size: 18,
+          color: scheme.onSurfaceVariant,
+        ),
+        filled: true,
+        fillColor: scheme.surfaceContainerHighest,
+        contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+
+  /// Small, tightly packed icon-only buttons — no text pill, no spreading
+  /// across the bar. Active tab gets a thin colored underline (like
+  /// Windows' indicator under an open pinned app) instead of a label.
+  /// Hover shows the name as a tooltip, the same pattern used on the Home
+  /// tab's app icons.
+  List<Widget> _iconButtons(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return List.generate(_items.length, (index) {
+      final item = _items[index];
+      final isSelected = widget.selectedIndex == index;
+      return Tooltip(
+        message: item.label,
+        waitDuration: const Duration(milliseconds: 500),
+        child: InkWell(
+          onTap: () => widget.onSelect(index),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            width: 44,
+            height: 42,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.orange.withValues(alpha: 0.14)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isSelected ? item.activeIcon : item.icon,
+                  size: 22,
+                  color: isSelected
+                      ? AppColors.orange
+                      : scheme.onSurfaceVariant,
+                ),
+                const SizedBox(height: 3),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: 3,
+                  width: isSelected ? 16 : 0,
+                  decoration: BoxDecoration(
+                    color: AppColors.orange,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
   }
 }
 
