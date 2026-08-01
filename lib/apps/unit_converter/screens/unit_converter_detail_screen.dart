@@ -79,25 +79,31 @@ class _UnitConverterDetailScreenState extends State<UnitConverterDetailScreen> {
         elevation: 0,
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-              child: _anchorCard(accent),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                  child: _anchorCard(accent),
+                ),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                    itemCount: otherUnits.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final unit = otherUnits[index];
+                      final value = results[unit.id]!;
+                      return _resultCard(scheme, accent, unit, value);
+                    },
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                itemCount: otherUnits.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (context, index) {
-                  final unit = otherUnits[index];
-                  final value = results[unit.id]!;
-                  return _resultCard(scheme, accent, unit, value);
-                },
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -136,32 +142,62 @@ class _UnitConverterDetailScreenState extends State<UnitConverterDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                TextField(
-                  controller: _inputController,
-                  focusNode: _inputFocusNode,
-                  autofocus: false,
-                  onChanged: (_) => setState(() {}),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                    signed: true,
+                Container(
+                  // The underline + edit icon are the affordance that tells
+                  // the user this number is editable — without it, this
+                  // looked visually identical to the read-only "0" values
+                  // in the result rows below, with no cue to tap and type.
+                  padding: const EdgeInsets.only(bottom: 6),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        width: 1.5,
+                      ),
+                    ),
                   ),
-                  cursorColor: Colors.white,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    isCollapsed: true,
-                    filled: false,
-                    fillColor: Colors.transparent,
-                    contentPadding: EdgeInsets.zero,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    errorBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _inputController,
+                          focusNode: _inputFocusNode,
+                          autofocus: false,
+                          onChanged: (_) => setState(() {}),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                            signed: true,
+                          ),
+                          cursorColor: Colors.white,
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            isCollapsed: true,
+                            filled: false,
+                            fillColor: Colors.transparent,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            errorBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8, bottom: 6),
+                        child: Icon(
+                          Icons.edit_rounded,
+                          size: 18,
+                          color: Colors.white.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

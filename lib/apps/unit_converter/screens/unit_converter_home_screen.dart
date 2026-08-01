@@ -47,72 +47,79 @@ class _UnitConverterHomeScreenState extends State<UnitConverterHomeScreen> {
         scrolledUnderElevation: 0,
       ),
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-              sliver: SliverToBoxAdapter(child: _header(scheme)),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-              sliver: SliverToBoxAdapter(child: _searchField(scheme)),
-            ),
-            ValueListenableBuilder<List<String>>(
-              valueListenable: AppSettingsState.recentUnitCategoryIds,
-              builder: (context, recentIds, _) {
-                if (_searchQuery.isNotEmpty || recentIds.isEmpty) {
-                  return const SliverToBoxAdapter(child: SizedBox.shrink());
-                }
-                final recentCategories = recentIds
-                    .map((id) {
-                      try {
-                        return unitCategories.firstWhere((c) => c.id == id);
-                      } catch (_) {
-                        return null;
-                      }
-                    })
-                    .whereType<UnitCategory>()
-                    .toList();
-                if (recentCategories.isEmpty) {
-                  return const SliverToBoxAdapter(child: SizedBox.shrink());
-                }
-                return SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  sliver: SliverToBoxAdapter(
-                    child: _recentSection(scheme, recentCategories),
-                  ),
-                );
-              },
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-              sliver: SliverToBoxAdapter(
-                child: Text(
-                  _searchQuery.isEmpty ? 'All categories' : 'Results',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurfaceVariant,
-                    letterSpacing: 0.2,
-                  ),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+                  sliver: SliverToBoxAdapter(child: _header(scheme)),
                 ),
-              ),
-            ),
-            _filtered.isEmpty
-                ? SliverPadding(
-                    padding: const EdgeInsets.only(top: 40),
-                    sliver: SliverToBoxAdapter(child: _emptyState(scheme)),
-                  )
-                : SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                    sliver: SliverList.separated(
-                      itemCount: _filtered.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) =>
-                          _categoryCard(scheme, _filtered[index]),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                  sliver: SliverToBoxAdapter(child: _searchField(scheme)),
+                ),
+                ValueListenableBuilder<List<String>>(
+                  valueListenable: AppSettingsState.recentUnitCategoryIds,
+                  builder: (context, recentIds, _) {
+                    if (_searchQuery.isNotEmpty || recentIds.isEmpty) {
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+                    final recentCategories = recentIds
+                        .map((id) {
+                          try {
+                            return unitCategories.firstWhere((c) => c.id == id);
+                          } catch (_) {
+                            return null;
+                          }
+                        })
+                        .whereType<UnitCategory>()
+                        .toList();
+                    if (recentCategories.isEmpty) {
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+                    return SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      sliver: SliverToBoxAdapter(
+                        child: _recentSection(scheme, recentCategories),
+                      ),
+                    );
+                  },
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                  sliver: SliverToBoxAdapter(
+                    child: Text(
+                      _searchQuery.isEmpty ? 'All categories' : 'Results',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onSurfaceVariant,
+                        letterSpacing: 0.2,
+                      ),
                     ),
                   ),
-          ],
+                ),
+                _filtered.isEmpty
+                    ? SliverPadding(
+                        padding: const EdgeInsets.only(top: 40),
+                        sliver: SliverToBoxAdapter(child: _emptyState(scheme)),
+                      )
+                    : SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                        sliver: SliverList.separated(
+                          itemCount: _filtered.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) =>
+                              _categoryCard(scheme, _filtered[index]),
+                        ),
+                      ),
+              ],
+            ),
+          ),
         ),
       ),
     );
