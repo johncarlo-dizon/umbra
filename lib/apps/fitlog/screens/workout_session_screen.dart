@@ -161,7 +161,22 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
               label: const Text('Add exercise'),
             )
           : null,
-      body: SafeArea(top: false, child: _buildBody(colorScheme)),
+      body: SafeArea(
+        top: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxWidth = constraints.maxWidth;
+            final contentMaxWidth = maxWidth > 700 ? 700.0 : maxWidth;
+
+            return Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                child: _buildBody(colorScheme),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 

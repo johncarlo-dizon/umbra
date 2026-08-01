@@ -83,20 +83,32 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
       appBar: AppBar(
         title: Text(widget.muscleGroup?.label ?? 'Search exercises'),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: _SearchBar(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              hintText: widget.muscleGroup != null
-                  ? 'Search within ${widget.muscleGroup!.label}'
-                  : 'Search exercises',
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth;
+          final contentMaxWidth = maxWidth > 700 ? 700.0 : maxWidth;
+
+          return Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: contentMaxWidth),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: _SearchBar(
+                      controller: _searchController,
+                      onChanged: _onSearchChanged,
+                      hintText: widget.muscleGroup != null
+                          ? 'Search within ${widget.muscleGroup!.label}'
+                          : 'Search exercises',
+                    ),
+                  ),
+                  Expanded(child: _buildBody(colorScheme)),
+                ],
+              ),
             ),
-          ),
-          Expanded(child: _buildBody(colorScheme)),
-        ],
+          );
+        },
       ),
     );
   }
