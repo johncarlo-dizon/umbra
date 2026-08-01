@@ -31,6 +31,13 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
       route: '/mangahub',
       color: AppColors.orange,
     ),
+    _AppEntry(
+      icon: Icons.fitness_center,
+      name: 'FitLog',
+      description: 'Log workouts and track progress',
+      route: '/workouts',
+      color: Colors.teal,
+    ),
   ];
 
   @override
