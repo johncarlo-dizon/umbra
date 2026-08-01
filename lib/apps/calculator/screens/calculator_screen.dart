@@ -181,139 +181,153 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         foregroundColor: scheme.onSurface,
         elevation: 0,
       ),
+      // Desktop/web responsiveness: without this, the Column below stretches
+      // to fill the full browser width, spacing the circular buttons apart
+      // until they stop looking like a calculator. Same pattern used
+      // elsewhere in the app — Align(topCenter) + ConstrainedBox(maxWidth) —
+      // keeps the calculator a fixed, centered, phone-proportioned width on
+      // wide screens while remaining full-width (unconstrained) on mobile.
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-                alignment: Alignment.bottomRight,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    if (_expression.isNotEmpty)
-                      Text(
-                        _expression,
-                        style: TextStyle(
-                          fontSize: 20,
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    const SizedBox(height: 8),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.bottomRight,
-                      child: Text(
-                        _display,
-                        style: TextStyle(
-                          fontSize: _hasError ? 28 : 56,
-                          fontWeight: FontWeight.w600,
-                          color: _hasError ? scheme.error : scheme.onSurface,
-                        ),
-                      ),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
                     ),
-                  ],
+                    alignment: Alignment.bottomRight,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        if (_expression.isNotEmpty)
+                          Text(
+                            _expression,
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        const SizedBox(height: 8),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            _display,
+                            style: TextStyle(
+                              fontSize: _hasError ? 28 : 56,
+                              fontWeight: FontWeight.w600,
+                              color: _hasError
+                                  ? scheme.error
+                                  : scheme.onSurface,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          _buttonExpanded(
+                            label: 'C',
+                            onTap: _clear,
+                            background: scheme.errorContainer,
+                            foreground: scheme.onErrorContainer,
+                          ),
+                          _buttonExpanded(
+                            label: '±',
+                            onTap: _toggleSign,
+                            background: scheme.secondaryContainer,
+                            foreground: scheme.onSecondaryContainer,
+                          ),
+                          _buttonExpanded(
+                            label: '%',
+                            onTap: _percent,
+                            background: scheme.secondaryContainer,
+                            foreground: scheme.onSecondaryContainer,
+                          ),
+                          _buttonExpanded(
+                            label: '÷',
+                            onTap: () => _applyOp(_Op.divide),
+                            background: scheme.primary,
+                            foreground: scheme.onPrimary,
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          _numButton('7'),
+                          _numButton('8'),
+                          _numButton('9'),
+                          _buttonExpanded(
+                            label: '×',
+                            onTap: () => _applyOp(_Op.multiply),
+                            background: scheme.primary,
+                            foreground: scheme.onPrimary,
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          _numButton('4'),
+                          _numButton('5'),
+                          _numButton('6'),
+                          _buttonExpanded(
+                            label: '−',
+                            onTap: () => _applyOp(_Op.subtract),
+                            background: scheme.primary,
+                            foreground: scheme.onPrimary,
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          _numButton('1'),
+                          _numButton('2'),
+                          _numButton('3'),
+                          _buttonExpanded(
+                            label: '+',
+                            onTap: () => _applyOp(_Op.add),
+                            background: scheme.primary,
+                            foreground: scheme.onPrimary,
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          _buttonExpanded(
+                            label: '0',
+                            flex: 2,
+                            onTap: () => _inputDigit('0'),
+                            background: scheme.surfaceContainerHighest,
+                            foreground: scheme.onSurface,
+                          ),
+                          _numButton('.'),
+                          _buttonExpanded(
+                            label: '=',
+                            onTap: _equals,
+                            background: scheme.primary,
+                            foreground: scheme.onPrimary,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      _buttonExpanded(
-                        label: 'C',
-                        onTap: _clear,
-                        background: scheme.errorContainer,
-                        foreground: scheme.onErrorContainer,
-                      ),
-                      _buttonExpanded(
-                        label: '±',
-                        onTap: _toggleSign,
-                        background: scheme.secondaryContainer,
-                        foreground: scheme.onSecondaryContainer,
-                      ),
-                      _buttonExpanded(
-                        label: '%',
-                        onTap: _percent,
-                        background: scheme.secondaryContainer,
-                        foreground: scheme.onSecondaryContainer,
-                      ),
-                      _buttonExpanded(
-                        label: '÷',
-                        onTap: () => _applyOp(_Op.divide),
-                        background: scheme.primary,
-                        foreground: scheme.onPrimary,
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      _numButton('7'),
-                      _numButton('8'),
-                      _numButton('9'),
-                      _buttonExpanded(
-                        label: '×',
-                        onTap: () => _applyOp(_Op.multiply),
-                        background: scheme.primary,
-                        foreground: scheme.onPrimary,
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      _numButton('4'),
-                      _numButton('5'),
-                      _numButton('6'),
-                      _buttonExpanded(
-                        label: '−',
-                        onTap: () => _applyOp(_Op.subtract),
-                        background: scheme.primary,
-                        foreground: scheme.onPrimary,
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      _numButton('1'),
-                      _numButton('2'),
-                      _numButton('3'),
-                      _buttonExpanded(
-                        label: '+',
-                        onTap: () => _applyOp(_Op.add),
-                        background: scheme.primary,
-                        foreground: scheme.onPrimary,
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      _buttonExpanded(
-                        label: '0',
-                        flex: 2,
-                        onTap: () => _inputDigit('0'),
-                        background: scheme.surfaceContainerHighest,
-                        foreground: scheme.onSurface,
-                      ),
-                      _numButton('.'),
-                      _buttonExpanded(
-                        label: '=',
-                        onTap: _equals,
-                        background: scheme.primary,
-                        foreground: scheme.onPrimary,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
