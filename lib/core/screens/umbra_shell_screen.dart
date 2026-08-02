@@ -21,6 +21,22 @@ const double _desktopBreakpoint = 700;
 /// an icon that expands on tap (the mobile pattern).
 const double _taskbarWideBreakpoint = 480;
 
+const _weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const _monthNames = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
 class UmbraShellScreen extends StatefulWidget {
   const UmbraShellScreen({super.key});
 
@@ -32,6 +48,7 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
   int _selectedNavIndex = 0;
   String _searchQuery = '';
   bool _searchExpanded = false;
+  bool _calendarOpen = false;
   StreamSubscription<AuthState>? _authSubscription;
 
   static const List<_AppEntry> _apps = [
@@ -104,6 +121,7 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
       _searchExpanded = !_searchExpanded;
       if (_searchExpanded) {
         _selectedNavIndex = 0;
+        _calendarOpen = false; // only one flyout open at a time
       } else {
         _searchQuery = '';
       }
@@ -114,6 +132,26 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
     setState(() {
       _searchExpanded = false;
       _searchQuery = '';
+    });
+  }
+
+  /// The clock, tapped — same idea as clicking Windows' taskbar clock to
+  /// open its calendar flyout.
+  void _toggleCalendar() {
+    setState(() {
+      _calendarOpen = !_calendarOpen;
+      if (_calendarOpen) {
+        _searchExpanded = false;
+        _searchQuery = '';
+      }
+    });
+  }
+
+  void _closeOverlays() {
+    setState(() {
+      _searchExpanded = false;
+      _searchQuery = '';
+      _calendarOpen = false;
     });
   }
 
@@ -131,19 +169,22 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
     // and never goes through _toggleSearch, so _searchExpanded stays false
     // while typing there — panel visibility must depend only on the query.
     final showResultsPanel = _searchQuery.trim().isNotEmpty;
+    final showAnyOverlay = showResultsPanel || _calendarOpen;
 
     return Scaffold(
-      // The panel lives inside the body's Stack rather than
-      // Scaffold.bottomSheet, so it can be a narrow flyout anchored above
-      // the search box's left edge (like Windows' taskbar search flyout)
-      // instead of a full-width sheet stretching across the screen.
-      // Positioning it at bottom:0 of the body already lines it up right
-      // above the taskbar, since Scaffold shrinks body to exclude
-      // bottomNavigationBar's height.
       body: SafeArea(
         child: Stack(
           children: [
             Positioned.fill(child: _buildSelectedTab()),
+            // Tapping anywhere outside a flyout closes it — same as
+            // clicking away from Windows' search or calendar flyouts.
+            if (showAnyOverlay)
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: _closeOverlays,
+                ),
+              ),
             if (showResultsPanel)
               Positioned(
                 left: 12,
@@ -157,6 +198,8 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
                   },
                 ),
               ),
+            if (_calendarOpen)
+              const Positioned(right: 12, bottom: 8, child: _CalendarPanel()),
           ],
         ),
       ),
@@ -167,6 +210,7 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
         searchQuery: _searchQuery,
         onSearchToggle: _toggleSearch,
         onSearchChanged: (value) => setState(() => _searchQuery = value),
+        onClockTap: _toggleCalendar,
       ),
     );
   }
@@ -222,11 +266,6 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
   // Home tab: wallpaper behind app icons ONLY — no greeting, no search
   // (both moved to the taskbar). Mobile centers a scrolling grid; desktop
   // anchors icons top-left in columns, like an actual desktop.
-  //
-  // The grid always shows every app, unfiltered — searching no longer
-  // hides icons here, it surfaces matches in the floating panel above the
-  // taskbar instead, the same way desktop search doesn't rearrange your
-  // desktop icons while you type.
   // ---------------------------------------------------------------------
 
   Widget _buildHomeTab() {
@@ -247,8 +286,6 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
                     color: Theme.of(context).colorScheme.surfaceContainerHigh,
                   ),
                 ),
-                // Soft overall scrim so white icon labels stay legible
-                // against any wallpaper, without needing per-photo tuning.
                 DecoratedBox(
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.18),
@@ -263,7 +300,6 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
     );
   }
 
-  /// Mobile: centered, scrolling icon grid — just the apps, nothing else.
   Widget _buildMobileHome() {
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
@@ -278,10 +314,6 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
     );
   }
 
-  /// Desktop: icons anchored top-left, filling top-to-bottom and starting
-  /// a new column when they run out of vertical room — matching the
-  /// column arrangement of an actual Windows desktop, not a row-wrapping
-  /// grid.
   Widget _buildDesktopHome() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(32, 28, 32, 28),
@@ -331,9 +363,9 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
   }
 }
 
-/// Floating panel of search matches, hovering directly above the taskbar
-/// via Scaffold.bottomSheet — never covers the whole screen, never
-/// reshuffles the Home grid underneath it.
+/// Floating panel of search matches, hovering above the taskbar's left
+/// side — never covers the whole screen, never reshuffles the Home grid
+/// underneath it.
 class _SearchResultsPanel extends StatelessWidget {
   final List<_AppEntry> results;
   final String query;
@@ -404,14 +436,116 @@ class _SearchResultsPanel extends StatelessWidget {
   }
 }
 
-/// The single taskbar — no more "standard vs floating" choice, because a
-/// real OS taskbar doesn't have that toggle either: it's a plain full-width
-/// bar, search box near the start, then icon buttons packed tightly right
-/// next to each other (not spread across the remaining width), each one
-/// showing a small underline when it's the active tab instead of a
-/// text label — closer to how Windows shows an indicator under an open
-/// app's pinned icon than to a Material bottom-nav bar. A live clock sits
-/// on the opposite end, the same corner a real taskbar clock lives in.
+/// Calendar flyout that opens when the taskbar clock is tapped — the same
+/// interaction as clicking Windows' system-tray clock. Shows the current
+/// month with today highlighted; pure date math, no package needed.
+class _CalendarPanel extends StatelessWidget {
+  const _CalendarPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final now = DateTime.now();
+    final first = DateTime(now.year, now.month, 1);
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final leadingBlanks = first.weekday - 1; // weekday: Mon=1 ... Sun=7
+    final totalCells = leadingBlanks + daysInMonth;
+    final rows = (totalCells / 7).ceil();
+
+    return Container(
+      width: 280,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.outlineVariant, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 24,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${_monthNames[now.month - 1]} ${now.year}',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+              color: scheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: _weekdayNames
+                .map(
+                  (d) => Expanded(
+                    child: Center(
+                      child: Text(
+                        d.substring(0, 2),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 6),
+          for (int r = 0; r < rows; r++)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                children: List.generate(7, (c) {
+                  final cellIndex = r * 7 + c;
+                  final day = cellIndex - leadingBlanks + 1;
+                  final isValid = day >= 1 && day <= daysInMonth;
+                  final isToday = isValid && day == now.day;
+                  return Expanded(
+                    child: Center(
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        alignment: Alignment.center,
+                        decoration: isToday
+                            ? const BoxDecoration(
+                                color: AppColors.orange,
+                                shape: BoxShape.circle,
+                              )
+                            : null,
+                        child: Text(
+                          isValid ? '$day' : '',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isToday
+                                ? FontWeight.w700
+                                : FontWeight.w400,
+                            color: isToday ? Colors.white : scheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The single taskbar — search box near the start, icon buttons packed
+/// tightly right next to it, a live clock pinned to the far end. Tapping
+/// the clock opens the calendar flyout (see _CalendarPanel), the same as
+/// clicking a real taskbar's clock.
 class _TaskbarNav extends StatefulWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelect;
@@ -419,6 +553,7 @@ class _TaskbarNav extends StatefulWidget {
   final String searchQuery;
   final VoidCallback onSearchToggle;
   final ValueChanged<String> onSearchChanged;
+  final VoidCallback onClockTap;
 
   const _TaskbarNav({
     required this.selectedIndex,
@@ -427,6 +562,7 @@ class _TaskbarNav extends StatefulWidget {
     required this.searchQuery,
     required this.onSearchToggle,
     required this.onSearchChanged,
+    required this.onClockTap,
   });
 
   @override
@@ -460,10 +596,6 @@ class _TaskbarNavState extends State<_TaskbarNav> {
   @override
   void didUpdateWidget(covariant _TaskbarNav oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Only push external changes (e.g. the query being cleared when search
-    // collapses) into the controller — never overwrite it while the query
-    // change originated from this same field, or the cursor jumps on every
-    // keystroke.
     if (widget.searchQuery != _searchController.text &&
         widget.searchQuery.isEmpty) {
       _searchController.clear();
@@ -499,25 +631,17 @@ class _TaskbarNavState extends State<_TaskbarNav> {
             final wide = barConstraints.maxWidth >= _taskbarWideBreakpoint;
 
             if (wide) {
-              // Desktop-width taskbar: search box permanently visible,
-              // icon cluster packed right next to it, clock pinned to the
-              // far end — just like a real taskbar's search-icons-clock
-              // layout.
               return Row(
                 children: [
                   SizedBox(width: 200, child: _searchField(context)),
                   const SizedBox(width: 12),
                   ..._iconButtons(context),
                   const Spacer(),
-                  const _LiveClock(),
+                  _LiveClock(onTap: widget.onClockTap),
                 ],
               );
             }
 
-            // Narrow/mobile taskbar: search collapses to an icon; the icon
-            // cluster still stays tightly packed, just right after it. The
-            // clock hides while search is expanded so it doesn't fight the
-            // text field for space, and shows compactly otherwise.
             if (widget.searchExpanded) {
               return Row(
                 children: [
@@ -540,7 +664,7 @@ class _TaskbarNavState extends State<_TaskbarNav> {
                 const SizedBox(width: 4),
                 ..._iconButtons(context),
                 const Spacer(),
-                const _LiveClock(compact: true),
+                _LiveClock(compact: true, onTap: widget.onClockTap),
               ],
             );
           },
@@ -576,11 +700,6 @@ class _TaskbarNavState extends State<_TaskbarNav> {
     );
   }
 
-  /// Small, tightly packed icon-only buttons — no text pill, no spreading
-  /// across the bar. Active tab gets a thin colored underline (like
-  /// Windows' indicator under an open pinned app) instead of a label.
-  /// Hover shows the name as a tooltip, the same pattern used on the Home
-  /// tab's app icons.
   List<Widget> _iconButtons(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return List.generate(_items.length, (index) {
@@ -631,13 +750,13 @@ class _TaskbarNavState extends State<_TaskbarNav> {
   }
 }
 
-/// Live clock/date, ticking once a minute (no need for per-second
-/// rebuilds on a taskbar readout), shown at the opposite end of the
-/// taskbar from search — the same corner a system clock occupies.
+/// Live clock/date, ticking once a minute, tappable — opens the calendar
+/// flyout via [onTap], same as clicking Windows' system-tray clock.
 class _LiveClock extends StatefulWidget {
   final bool compact;
+  final VoidCallback onTap;
 
-  const _LiveClock({this.compact = false});
+  const _LiveClock({this.compact = false, required this.onTap});
 
   @override
   State<_LiveClock> createState() => _LiveClockState();
@@ -647,36 +766,10 @@ class _LiveClockState extends State<_LiveClock> {
   late DateTime _now;
   Timer? _timer;
 
-  static const _weekdayNames = [
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-    'Sun',
-  ];
-  static const _monthNames = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
   @override
   void initState() {
     super.initState();
     _now = DateTime.now();
-    // Align the first tick to the next minute boundary, then tick once a
-    // minute after that — plenty for a clock nobody needs second-accurate.
     final msToNextMinute = 60000 - (_now.second * 1000 + _now.millisecond);
     Timer(Duration(milliseconds: msToNextMinute), () {
       if (!mounted) return;
@@ -711,46 +804,49 @@ class _LiveClockState extends State<_LiveClock> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    if (widget.compact) {
-      // Narrow taskbar: just the time, small, to avoid crowding the icons.
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Text(
-          _timeLabel(),
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
+    final content = widget.compact
+        ? Text(
             _timeLabel(),
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
-              height: 1.1,
-              color: scheme.onSurface,
-            ),
-          ),
-          Text(
-            _dateLabel(),
-            style: TextStyle(
-              fontSize: 11,
-              height: 1.1,
               color: scheme.onSurfaceVariant,
             ),
-          ),
-        ],
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _timeLabel(),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  height: 1.1,
+                  color: scheme.onSurface,
+                ),
+              ),
+              Text(
+                _dateLabel(),
+                style: TextStyle(
+                  fontSize: 11,
+                  height: 1.1,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          );
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: content,
+        ),
       ),
     );
   }
