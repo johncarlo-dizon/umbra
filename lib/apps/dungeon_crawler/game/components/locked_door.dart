@@ -17,7 +17,7 @@ class LockedDoor extends PositionComponent
     required Vector2 size,
     required this.requiresKey,
   }) : super(position: position, size: size);
-
+  TextComponent? _label;
   final String requiresKey;
   bool _open = false;
   RectangleHitbox? _hitbox;
@@ -27,16 +27,17 @@ class LockedDoor extends PositionComponent
     await super.onLoad();
     _hitbox = RectangleHitbox(collisionType: CollisionType.passive);
     add(_hitbox!);
-    add(
-      TextComponent(
-        text: 'DOOR ($requiresKey)',
-        position: Vector2(size.x / 2, -10),
-        anchor: Anchor.bottomCenter,
-        textRenderer: TextPaint(
-          style: const TextStyle(color: Colors.white, fontSize: 8),
-        ),
+
+    _label = TextComponent(
+      text: 'DOOR ($requiresKey)',
+      position: absolutePosition + Vector2(size.x / 2, -10),
+      anchor: Anchor.bottomCenter,
+      priority: 100, // always renders above player/enemies
+      textRenderer: TextPaint(
+        style: const TextStyle(color: Colors.white, fontSize: 8),
       ),
     );
+    gameRef.world.add(_label!);
   }
 
   @override

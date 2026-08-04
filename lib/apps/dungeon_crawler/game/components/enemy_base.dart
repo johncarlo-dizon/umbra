@@ -71,7 +71,7 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
 
     animComponent = SpriteAnimationComponent(
       animation: _spawnAnim,
-      size: Vector2(size.x * 1.8, size.y * 1.8),
+      size: Vector2(size.x * 1.3, size.y * 1.3),
       anchor: Anchor.bottomCenter,
       position: Vector2(size.x / 2, size.y),
       removeOnFinish: false,

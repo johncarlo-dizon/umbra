@@ -116,7 +116,7 @@ class Player extends PositionComponent
 
     _animComponent = SpriteAnimationComponent(
       animation: _spawnAnimation,
-      size: Vector2(48, 64),
+      size: Vector2(32, 40), // was Vector2(48, 64)
       anchor: Anchor.bottomCenter,
       position: Vector2(size.x / 2, size.y),
       removeOnFinish: false,
