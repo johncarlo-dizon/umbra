@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="22" height="15" tilewidth="32" tileheight="32" infinite="0" nextlayerid="5" nextobjectid="20">
+ <tileset firstgid="1" name="tileset" tilewidth="32" tileheight="32" tilecount="5" columns="5">
+  <image source="tileset.png" width="160" height="32"/>
+ </tileset>
+ <layer id="1" name="Ground" width="22" height="15">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,0,0,
+0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,0,0,
+0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,0,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,
+0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,0,0,
+0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,0,0,
+0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,0,0,
+0,0,0,0,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+0,0,0,0,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,
+0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,
+0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,
+0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <layer id="2" name="Walls" width="22" height="15">
+  <data encoding="csv">
+2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+2,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,2,2,2,2,
+2,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,2,2,2,2,
+2,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,2,2,2,2,
+2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,
+2,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,2,2,2,2,
+2,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,2,2,2,2,
+2,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,2,2,2,2,
+2,2,2,2,0,2,2,2,2,2,2,2,2,0,0,2,2,2,2,2,2,2,
+2,2,2,2,0,2,2,2,2,2,2,2,2,0,0,2,2,2,2,2,2,2,
+2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,
+2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,
+2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,
+2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,
+2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2
+</data>
+ </layer>
+ <objectgroup id="3" name="Objects">
+  <object id="1" name="PlayerSpawn" type="PlayerSpawn" x="64" y="64" width="32" height="32"/>
+
+  <object id="2" name="PatrolEnemy1" type="PatrolEnemy" x="416" y="64" width="32" height="32">
+   <properties>
+    <property name="pathPoints" value="13,2;16,2;16,5;13,5"/>
+   </properties>
+  </object>
+
+  <object id="3" name="ChaseEnemy1" type="ChaseEnemy" x="448" y="352" width="32" height="32">
+   <properties>
+   <property name="detectionRadius" type="int" value="140"/>
+   </properties>
+  </object>
+
+  <object id="4" name="ChaseEnemy2" type="ChaseEnemy" x="128" y="192" width="32" height="32">
+   <properties>
+  <property name="detectionRadius" type="int" value="120"/>
+   </properties>
+  </object>
+
+  <object id="5" name="BronzeKey" type="Item" x="480" y="160" width="32" height="32">
+   <properties>
+    <property name="itemType" value="key"/>
+    <property name="itemId" value="bronze_key"/>
+   </properties>
+  </object>
+
+  <object id="6" name="Potion1" type="Item" x="96" y="160" width="32" height="32">
+   <properties>
+    <property name="itemType" value="potion"/>
+    <property name="itemId" value="potion_1"/>
+   </properties>
+  </object>
+
+  <object id="7" name="Coin1" type="Item" x="192" y="96" width="32" height="32">
+   <properties>
+    <property name="itemType" value="coin"/>
+    <property name="itemId" value="coin_1"/>
+   </properties>
+  </object>
+
+  <object id="8" name="Coin2" type="Item" x="384" y="384" width="32" height="32">
+   <properties>
+    <property name="itemType" value="coin"/>
+    <property name="itemId" value="coin_2"/>
+   </properties>
+  </object>
+
+  <object id="9" name="LockedDoor1" type="LockedDoor" x="288" y="128" width="64" height="32">
+   <properties>
+    <property name="requiresKey" value="bronze_key"/>
+   </properties>
+  </object>
+
+  <object id="10" name="Exit" type="Exit" x="544" y="352" width="32" height="32"/>
+ </objectgroup>
+</map>

@@ -80,6 +80,13 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
       route: '/unit-converter',
       color: Colors.teal,
     ),
+    _AppEntry(
+      icon: Icons.castle, // or Icons.shield / Icons.videogame_asset
+      name: 'Dungeon Crawler',
+      description: 'Fight through a dungeon, collect keys, find the exit.',
+      route: '/dungeon-crawler',
+      color: AppColors.orange, // or a new distinct color
+    ),
   ];
 
   @override
