@@ -13,8 +13,8 @@ class ChaseEnemy extends EnemyBase with HasGameRef<DungeonGame> {
         size: Vector2.all(28),
         maxHp: 55,
         contactDamage: 15,
-        spriteFile: 'aqua_master_spritesheet.png',
-        cellSize: Vector2(164, 95),
+        spriteFile: 'sige.png',
+        cellSize: Vector2(84, 742 / 9), // ← was Vector2(164, 95)
       );
 
   final double detectionRadius;

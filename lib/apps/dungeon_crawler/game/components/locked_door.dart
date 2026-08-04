@@ -25,6 +25,7 @@ class LockedDoor extends PositionComponent
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    priority = (position.y + size.y).toInt();
     _hitbox = RectangleHitbox(collisionType: CollisionType.passive);
     add(_hitbox!);
 
@@ -42,19 +43,27 @@ class LockedDoor extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    final rect = Rect.fromLTWH(0, 0, size.x, size.y);
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..color = _open ? const Color(0xFF604628) : const Color(0xFF784216),
-    );
-    if (!_open) {
-      canvas.drawCircle(
-        Offset(size.x / 2, size.y / 2),
-        3,
-        Paint()..color = const Color(0xFFFF7A1A),
+    if (_open) {
+      // Open: draw a slim threshold strip instead of a full solid block
+      final stripHeight = size.y * 0.12;
+      final stripRect = Rect.fromLTWH(
+        0,
+        size.y - stripHeight,
+        size.x,
+        stripHeight,
       );
+      canvas.drawRect(stripRect, Paint()..color = const Color(0xFF604628));
+      return;
     }
+
+    // Locked: full solid block, reads clearly as an obstacle
+    final rect = Rect.fromLTWH(0, 0, size.x, size.y);
+    canvas.drawRect(rect, Paint()..color = const Color(0xFF784216));
+    canvas.drawCircle(
+      Offset(size.x / 2, size.y / 2),
+      3,
+      Paint()..color = const Color(0xFFFF7A1A),
+    );
   }
 
   void _openDoor() {

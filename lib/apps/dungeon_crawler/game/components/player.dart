@@ -65,12 +65,10 @@ class Player extends PositionComponent
     add(RectangleHitbox(collisionType: CollisionType.active));
 
     // --- main master sheet: walk / heal / death / spawn / victory ---
-    final masterImage = await gameRef.images.load(
-      'player_master_spritesheet.png',
-    );
+    final masterImage = await gameRef.images.load('maindiwa.png');
     final masterSheet = SpriteSheet(
       image: masterImage,
-      srcSize: Vector2(197, 232),
+      srcSize: Vector2(73, 86),
     );
     SpriteAnimation m(
       int row,
@@ -96,12 +94,10 @@ class Player extends PositionComponent
     _victoryAnimation = m(9, 2, stepTime: 0.25, loop: true);
 
     // --- attack variants sheet: 9 right-facing attacks, mirrored at runtime ---
-    final variantImage = await gameRef.images.load(
-      'player_attack_variants_spritesheet.png',
-    );
+    final variantImage = await gameRef.images.load('diwattack.png');
     final variantSheet = SpriteSheet(
       image: variantImage,
-      srcSize: Vector2(341, 204),
+      srcSize: Vector2(125, 75),
     );
     const variantFrameCounts = [3, 2, 3, 3, 3, 3, 3, 3, 3];
     _attackVariants = [
@@ -216,7 +212,7 @@ class Player extends PositionComponent
       }
       position.add(combined * speed * dt);
     }
-
+    priority = position.y.toInt();
     if (_attackTimer > 0) _attackTimer -= dt;
     if (_invulnerable) {
       _invulnTimer -= dt;

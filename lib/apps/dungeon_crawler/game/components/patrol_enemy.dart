@@ -13,8 +13,8 @@ class PatrolEnemy extends EnemyBase {
         size: Vector2.all(26),
         maxHp: 40,
         contactDamage: 10,
-        spriteFile: 'goblin_master_spritesheet.png',
-        cellSize: Vector2(96, 94),
+        spriteFile: 'boylisensya.png',
+        cellSize: Vector2(84, 742 / 9),
       );
 
   final List<Vector2> waypoints;
