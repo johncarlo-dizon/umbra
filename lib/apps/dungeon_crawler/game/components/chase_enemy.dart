@@ -2,6 +2,7 @@ import 'package:flame/components.dart';
 
 import '../dungeon_game.dart';
 import 'enemy_base.dart';
+import '../../audio/dungeon_audio.dart';
 
 /// Sits still until the player comes within [detectionRadius], then
 /// pursues directly. Gives up and returns to idling if the player breaks
@@ -35,6 +36,7 @@ class ChaseEnemy extends EnemyBase with HasGameRef<DungeonGame> {
 
     if (!_chasing && distance <= detectionRadius) {
       _chasing = true;
+      DungeonAudio.chaseAggro();
     } else if (_chasing && distance > giveUpRadius) {
       _chasing = false;
     }

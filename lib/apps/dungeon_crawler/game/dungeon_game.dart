@@ -12,6 +12,7 @@ import 'components/patrol_enemy.dart';
 import 'components/player.dart';
 import 'components/wall_block.dart';
 import 'package:flame/cache.dart';
+import '../audio/dungeon_audio.dart';
 
 /// Root Flame game for the dungeon crawler sub-app. Owns the shared
 /// `DungeonGameState` (HP/win-lose) and `Inventory`, both handed in from
@@ -35,9 +36,15 @@ class DungeonGame extends FlameGame
   Player? player;
   late final World gameWorld;
   late final CameraComponent gameCamera;
+  @override
+  void update(double dt) {
+    super.update(dt);
+    DungeonAudio.tick(dt);
+  }
 
   @override
   Future<void> onLoad() async {
+    await DungeonAudio.preload();
     await super.onLoad();
 
     final tiledMap = await TiledComponent.load(

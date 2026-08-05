@@ -2,7 +2,7 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
 import 'package:flutter/material.dart';
-
+import '../../audio/dungeon_audio.dart';
 import '../dungeon_game.dart';
 import '../../models/inventory.dart';
 import 'player.dart';
@@ -95,6 +95,11 @@ class ItemPickup extends PositionComponent
     super.onCollisionStart(intersectionPoints, other);
     if (other is Player) {
       gameRef.inventory.addItem(itemId, kind);
+      if (kind == ItemKind.coin) {
+        DungeonAudio.coinCollect();
+      } else {
+        DungeonAudio.itemPickup();
+      }
       removeFromParent();
     }
   }

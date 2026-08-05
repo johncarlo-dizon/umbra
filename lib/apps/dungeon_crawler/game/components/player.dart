@@ -10,6 +10,7 @@ import '../dungeon_game.dart';
 import 'enemy_base.dart';
 import 'melee_hitbox.dart';
 import 'locked_door.dart';
+import '../../audio/dungeon_audio.dart';
 
 enum FacingDirection { up, down, left, right }
 
@@ -257,6 +258,7 @@ class Player extends PositionComponent
     final consumed = gameRef.inventory.consumePotion();
     if (consumed) {
       gameRef.gameState.heal(potionHealAmount);
+      DungeonAudio.potionDrink();
       _setState(PlayerAnimState.heal);
       debugPrint('Player: used potion, healed $potionHealAmount HP');
     } else {
@@ -265,6 +267,7 @@ class Player extends PositionComponent
   }
 
   void playVictory() {
+    DungeonAudio.playerWin();
     _setState(PlayerAnimState.victory);
   }
 
@@ -275,7 +278,10 @@ class Player extends PositionComponent
     gameRef.gameState.damage(amount);
     if (gameRef.gameState.hp.value <= 0) {
       _isDead = true;
+      DungeonAudio.playerDeath();
       _setState(PlayerAnimState.death);
+    } else {
+      DungeonAudio.playerHurt();
     }
   }
 

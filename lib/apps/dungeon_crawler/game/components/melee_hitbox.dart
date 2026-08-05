@@ -1,13 +1,9 @@
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 
+import '../../audio/dungeon_audio.dart';
 import 'enemy_base.dart';
 
-/// A short-lived, invisible-ish hitbox spawned in front of the player on
-/// attack. Deals [damage] once per enemy it overlaps, then removes itself
-/// after [lifespan] seconds. Kept dumb on purpose — visual feedback (a
-/// swing sprite/animation) can be layered on later without touching the
-/// collision logic here.
 class MeleeHitbox extends PositionComponent with CollisionCallbacks {
   MeleeHitbox({
     required Vector2 position,
@@ -32,6 +28,9 @@ class MeleeHitbox extends PositionComponent with CollisionCallbacks {
     super.update(dt);
     _age += dt;
     if (_age >= lifespan) {
+      if (_alreadyHit.isEmpty) {
+        DungeonAudio.attackWhiff();
+      }
       removeFromParent();
     }
   }
@@ -45,6 +44,7 @@ class MeleeHitbox extends PositionComponent with CollisionCallbacks {
     if (other is EnemyBase && !_alreadyHit.contains(other)) {
       _alreadyHit.add(other);
       other.takeDamage(damage);
+      DungeonAudio.attackHit();
     }
   }
 }

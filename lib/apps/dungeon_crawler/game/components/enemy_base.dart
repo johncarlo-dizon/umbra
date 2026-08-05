@@ -3,7 +3,7 @@ import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/sprite.dart';
 import 'package:flutter/material.dart';
-
+import '../../audio/dungeon_audio.dart';
 import 'player.dart';
 
 enum EnemyFacing { up, down, left, right }
@@ -99,6 +99,7 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
   }
 
   void _playAttackAnimation() {
+    DungeonAudio.enemyAttack();
     if (_isDying) return;
     _isAttacking = true;
     animComponent.animation = (facing == EnemyFacing.left)
@@ -120,6 +121,7 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
   }
 
   void onDeath() {
+    DungeonAudio.enemyDeath();
     if (_isDying) return;
     _isDying = true;
     animComponent.animation = _deathAnim;
