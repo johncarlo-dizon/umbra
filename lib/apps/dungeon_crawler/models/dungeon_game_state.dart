@@ -9,6 +9,7 @@ class DungeonGameState {
   final int maxHp;
   final ValueNotifier<int> hp;
   final ValueNotifier<RunStatus> status = ValueNotifier(RunStatus.playing);
+  final ValueNotifier<String?> banner = ValueNotifier(null);
 
   void damage(int amount) {
     if (status.value != RunStatus.playing) return;
@@ -36,13 +37,28 @@ class DungeonGameState {
     });
   }
 
+  /// Shows a brief centered banner (e.g. "Level 2") that auto-dismisses.
+  /// Used for level transitions — separate from `RunStatus`, since a
+  /// level change isn't a win/lose state.
+  void showBanner(
+    String text, {
+    Duration duration = const Duration(milliseconds: 1600),
+  }) {
+    banner.value = text;
+    Future.delayed(duration, () {
+      if (banner.value == text) banner.value = null;
+    });
+  }
+
   void reset() {
     hp.value = maxHp;
     status.value = RunStatus.playing;
+    banner.value = null;
   }
 
   void dispose() {
     hp.dispose();
     status.dispose();
+    banner.dispose();
   }
 }

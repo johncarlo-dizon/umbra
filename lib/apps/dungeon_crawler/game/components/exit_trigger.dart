@@ -3,31 +3,27 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 import '../dungeon_game.dart';
+import '../../audio/dungeon_audio.dart';
 import 'player.dart';
 
-/// The level exit. Purely a sensor — no solid hitbox — so the player can
-/// simply walk onto it. Triggers `DungeonGameState.reachExit()` on
-/// contact, which flips `RunStatus` to `won` and the screen swaps in the
-/// victory overlay.
+/// The level exit. If [isFinalExit] is true (last level's Exit object,
+/// `isFinalExit` property set to true in Tiled), reaching it wins the
+/// run. Otherwise it loads the next level via `DungeonGame.loadNextLevel()`.
 class ExitTrigger extends PositionComponent
     with CollisionCallbacks, HasGameRef<DungeonGame> {
-  ExitTrigger({required Vector2 position, required Vector2 size})
-    : super(position: position, size: size);
+  ExitTrigger({
+    required Vector2 position,
+    required Vector2 size,
+    required this.isFinalExit,
+  }) : super(position: position, size: size);
+
+  final bool isFinalExit;
+  bool _triggered = false;
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
     add(RectangleHitbox(collisionType: CollisionType.passive));
-    add(
-      TextComponent(
-        text: 'EXIT',
-        position: Vector2(size.x / 2, -10),
-        anchor: Anchor.bottomCenter,
-        textRenderer: TextPaint(
-          style: const TextStyle(color: Colors.white, fontSize: 8),
-        ),
-      ),
-    );
   }
 
   @override
@@ -44,10 +40,15 @@ class ExitTrigger extends PositionComponent
     PositionComponent other,
   ) {
     super.onCollisionStart(intersectionPoints, other);
-    if (other is Player) {
-      debugPrint('ExitTrigger: player reached exit');
+    if (other is! Player || _triggered) return;
+    _triggered = true;
+
+    if (isFinalExit) {
       other.playVictory();
       gameRef.gameState.reachExit();
+    } else {
+      DungeonAudio.doorUnlock(); // reuse as a level-transition "chime" — swap for a dedicated sound later if you want one
+      gameRef.loadNextLevel();
     }
   }
 }

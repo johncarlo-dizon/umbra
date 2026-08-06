@@ -11,24 +11,29 @@ import 'components/locked_door.dart';
 import 'components/patrol_enemy.dart';
 import 'components/player.dart';
 import 'components/wall_block.dart';
-import 'package:flame/cache.dart';
+
 import '../audio/dungeon_audio.dart';
 
-/// Root Flame game for the dungeon crawler sub-app. Owns the shared
-/// `DungeonGameState` (HP/win-lose) and `Inventory`, both handed in from
-/// `DungeonCrawlerScreen` so the surrounding Flutter overlays
-/// (`ValueListenableBuilder`s) can read the same instances the game
-/// components mutate.
+/// Root Flame game for the dungeon crawler sub-app.
 ///
-/// Map data: `assets/tiles/dungeon.tmx` + `assets/tiles/tileset.png`,
-/// authored as a placeholder 3-room layout (start room -> locked-door
-/// corridor -> key room -> exit room), see the Objects layer for entity
-/// spawn points and their Tiled "Type"/properties.
+/// Supports multiple levels: [levels] is loaded in order, and reaching a
+/// non-final `Exit` (see `isFinalExit` on the Tiled object) calls
+/// [loadNextLevel] instead of ending the run. The same `Player` instance,
+/// `DungeonGameState` (HP), and `Inventory` persist across the
+/// transition — only the map, walls, enemies, items, and doors are torn
+/// down and rebuilt; the player is repositioned to the new level's
+/// `PlayerSpawn` rather than recreated.
 class DungeonGame extends FlameGame
     with HasCollisionDetection, HasKeyboardHandlerComponents {
   DungeonGame({required this.gameState, required this.inventory});
 
   static const double tileSize = 32;
+
+  static const List<String> levels = [
+    'dungeon_level1.tmx',
+    'dungeon_level2.tmx',
+  ];
+  int currentLevelIndex = 0;
 
   final DungeonGameState gameState;
   final Inventory inventory;
@@ -36,27 +41,42 @@ class DungeonGame extends FlameGame
   Player? player;
   late final World gameWorld;
   late final CameraComponent gameCamera;
+
+  @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+    await DungeonAudio.preload();
+
+    gameWorld = World();
+    gameCamera = CameraComponent(world: gameWorld)..viewfinder.zoom = 2.5;
+    addAll([gameWorld, gameCamera]);
+
+    await _loadLevel(levels[currentLevelIndex]);
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
     DungeonAudio.tick(dt);
   }
 
-  @override
-  Future<void> onLoad() async {
-    await DungeonAudio.preload();
-    await super.onLoad();
+  Future<void> loadNextLevel() async {
+    currentLevelIndex++;
+    if (currentLevelIndex >= levels.length) {
+      // shouldn't normally happen — the last level's Exit should be
+      // marked isFinalExit=true — but guard against a map authoring
+      // mistake rather than crash.
+      gameState.reachExit();
+      return;
+    }
+    gameState.showBanner('Level ${currentLevelIndex + 1}');
+    await _loadLevel(levels[currentLevelIndex]);
+  }
 
-    final tiledMap = await TiledComponent.load(
-      'dungeon.tmx',
-      Vector2.all(tileSize),
-      images: Images(prefix: 'assets/tiles/'),
-    );
+  Future<void> _loadLevel(String fileName) async {
+    _clearLevelEntities();
 
-    gameWorld = World();
-    gameCamera = CameraComponent(world: gameWorld)..viewfinder.zoom = 2.5;
-    addAll([gameWorld, gameCamera]);
-
+    final tiledMap = await TiledComponent.load(fileName, Vector2.all(tileSize));
     gameWorld.add(tiledMap);
 
     _buildWallCollisions(tiledMap);
@@ -67,15 +87,21 @@ class DungeonGame extends FlameGame
     }
   }
 
-  /// One `WallBlock` per non-empty cell in the "Walls" tile layer. Not the
-  /// most efficient approach for a large map (no run-length merging of
-  /// adjacent wall tiles into bigger rects) but the placeholder map is
-  /// small (22x15) and this keeps the collision logic easy to follow —
-  /// revisit with merged rects if a much bigger map is added later.
+  /// Removes everything from the previous level (map, walls, enemies,
+  /// items, doors, exit, any lingering hitboxes/projectiles) but keeps
+  /// the `Player` component itself — it gets repositioned by the next
+  /// level's `PlayerSpawn` object instead of being recreated, so HP and
+  /// facing/animation state carry over naturally.
+  void _clearLevelEntities() {
+    for (final child in gameWorld.children.toList()) {
+      if (child == player) continue;
+      child.removeFromParent();
+    }
+  }
+
   void _buildWallCollisions(TiledComponent tiledMap) {
     final layer = tiledMap.tileMap.getLayer<TileLayer>('Walls');
     if (layer == null) return;
-
     for (var y = 0; y < layer.height; y++) {
       for (var x = 0; x < layer.width; x++) {
         final gid = layer.data?[y * layer.width + x] ?? 0;
@@ -92,8 +118,7 @@ class DungeonGame extends FlameGame
 
   void _spawnFromObjects(TiledComponent tiledMap) {
     final objects =
-        tiledMap.tileMap.getLayer<ObjectGroup>('Objects')?.objects ??
-        <TiledObject>[];
+        tiledMap.tileMap.getLayer<ObjectGroup>('Objects')?.objects ?? [];
 
     for (final obj in objects) {
       final topLeft = Vector2(obj.x, obj.y);
@@ -101,8 +126,12 @@ class DungeonGame extends FlameGame
 
       switch (obj.type) {
         case 'PlayerSpawn':
-          player = Player(position: center);
-          gameWorld.add(player!);
+          if (player == null) {
+            player = Player(position: center);
+            gameWorld.add(player!);
+          } else {
+            player!.position = center;
+          }
           break;
 
         case 'PatrolEnemy':
@@ -114,7 +143,6 @@ class DungeonGame extends FlameGame
                 final parts = pair.split(',');
                 final gx = double.parse(parts[0].trim());
                 final gy = double.parse(parts[1].trim());
-                // stored as tile-grid coords in the map -> pixel-center them
                 return Vector2(
                   gx * tileSize + tileSize / 2,
                   gy * tileSize + tileSize / 2,
@@ -157,10 +185,13 @@ class DungeonGame extends FlameGame
           break;
 
         case 'Exit':
+          final isFinalExit =
+              obj.properties.getValue<bool>('isFinalExit') ?? false;
           gameWorld.add(
             ExitTrigger(
               position: topLeft,
               size: Vector2(obj.width, obj.height),
+              isFinalExit: isFinalExit,
             ),
           );
           break;
@@ -179,8 +210,5 @@ class DungeonGame extends FlameGame
     }
   }
 
-  /// Small convenience so components (e.g. `Player.attack()`) can add a
-  /// short-lived effect component to the world without reaching for
-  /// `gameWorld` directly everywhere.
   void addComponentToWorld(Component c) => gameWorld.add(c);
 }

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="5" nextobjectid="40">
+ <tileset firstgid="1" name="tileset" tilewidth="32" tileheight="32" tilecount="5" columns="5">
+  <image source="tileset.png" width="160" height="32"/>
+ </tileset>
+ <layer id="1" name="Ground" width="30" height="20">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,0,
+0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,
+0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,0,
+0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,0,
+0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,0,
+0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,
+0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,
+0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,
+0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <layer id="2" name="Walls" width="30" height="20">
+  <data encoding="csv">
+2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+2,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,
+2,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,
+2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,
+2,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,
+2,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,
+2,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,
+2,2,2,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,2,2,
+2,2,2,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,2,2,2,2,2,2,2,2,2,2,
+2,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,
+2,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,
+2,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,
+2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+2,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,
+2,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,
+2,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,
+2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,
+2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,2,
+2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2
+</data>
+ </layer>
+ <objectgroup id="3" name="Objects">
+  <object id="1" name="PlayerSpawn" type="PlayerSpawn" x="64" y="64" width="32" height="32"/>
+
+  <object id="2" name="ChaseEnemy1" type="ChaseEnemy" x="416" y="64" width="32" height="32">
+   <properties><property name="detectionRadius" type="int"  value="130"/></properties>
+  </object>
+
+  <object id="3" name="PatrolEnemy1" type="PatrolEnemy" x="672" y="64" width="32" height="32">
+   <properties><property name="pathPoints" value="21,2;26,2;26,5;21,5"/></properties>
+  </object>
+
+  <object id="4" name="ChaseEnemy2" type="ChaseEnemy" x="800" y="128" width="32" height="32">
+   <properties><property name="detectionRadius" type="int"  value="130"/></properties>
+  </object>
+
+  <object id="5" name="ChaseEnemy3" type="ChaseEnemy" x="160" y="384" width="32" height="32">
+   <properties><property name="detectionRadius" type="int"  value="140"/></properties>
+  </object>
+
+  <object id="6" name="PatrolEnemy2" type="PatrolEnemy" x="480" y="352" width="32" height="32">
+   <properties><property name="pathPoints" value="15,11;19,11;19,14;15,14"/></properties>
+  </object>
+
+  <object id="7" name="ChaseEnemy4" type="ChaseEnemy" x="832" y="416" width="32" height="32">
+   <properties><property name="detectionRadius" type="int"  value="130"/></properties>
+  </object>
+
+  <object id="8" name="SilverKey" type="Item" x="160" y="128" width="32" height="32">
+   <properties><property name="itemType" value="key"/><property name="itemId" value="silver_key"/></properties>
+  </object>
+
+  <object id="9" name="GoldKey" type="Item" x="192" y="416" width="32" height="32">
+   <properties><property name="itemType" value="key"/><property name="itemId" value="gold_key"/></properties>
+  </object>
+
+  <object id="10" name="Potion1" type="Item" x="128" y="64" width="32" height="32">
+   <properties><property name="itemType" value="potion"/><property name="itemId" value="potion_l2_1"/></properties>
+  </object>
+
+  <object id="11" name="Potion2" type="Item" x="512" y="384" width="32" height="32">
+   <properties><property name="itemType" value="potion"/><property name="itemId" value="potion_l2_2"/></properties>
+  </object>
+
+  <object id="12" name="Potion3" type="Item" x="800" y="480" width="32" height="32">
+   <properties><property name="itemType" value="potion"/><property name="itemId" value="potion_l2_3"/></properties>
+  </object>
+
+  <object id="13" name="Coin1" type="Item" x="736" y="96" width="32" height="32">
+   <properties><property name="itemType" value="coin"/><property name="itemId" value="coin_l2_1"/></properties>
+  </object>
+
+  <object id="14" name="Coin2" type="Item" x="256" y="352" width="32" height="32">
+   <properties><property name="itemType" value="coin"/><property name="itemId" value="coin_l2_2"/></properties>
+  </object>
+
+  <object id="15" name="Coin3" type="Item" x="576" y="448" width="32" height="32">
+   <properties><property name="itemType" value="coin"/><property name="itemId" value="coin_l2_3"/></properties>
+  </object>
+
+  <object id="16" name="Coin4" type="Item" x="864" y="352" width="32" height="32">
+   <properties><property name="itemType" value="coin"/><property name="itemId" value="coin_l2_4"/></properties>
+  </object>
+
+  <object id="17" name="LockedDoor1" type="LockedDoor" x="256" y="96" width="64" height="32">
+   <properties><property name="requiresKey" value="silver_key"/></properties>
+  </object>
+
+  <object id="18" name="LockedDoor2" type="LockedDoor" x="672" y="384" width="64" height="32">
+   <properties><property name="requiresKey" value="gold_key"/></properties>
+  </object>
+
+  <object id="19" name="Exit" type="Exit" x="832" y="512" width="32" height="32">
+   <properties><property name="isFinalExit" type="bool" value="true"/></properties>
+  </object>
+ </objectgroup>
+</map>

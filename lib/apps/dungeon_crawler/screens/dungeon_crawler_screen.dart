@@ -80,6 +80,35 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
               children: [
                 HpBarOverlay(gameState: _gameState),
                 InventoryOverlay(inventory: _inventory),
+                ValueListenableBuilder<String?>(
+                  valueListenable: _gameState.banner,
+                  builder: (context, text, _) {
+                    return AnimatedOpacity(
+                      opacity: text != null ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            text ?? '',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
                 if (_isTouchPlatform) TouchControlsOverlay(game: _game),
                 Positioned(
                   top: 16,
