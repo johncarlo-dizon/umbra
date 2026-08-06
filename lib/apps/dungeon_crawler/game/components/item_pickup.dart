@@ -28,8 +28,6 @@ class ItemPickup extends PositionComponent
 
   SpriteAnimationComponent? _animComponent;
 
-  Color get _keyColor => const Color(0xFF00E5FF);
-
   @override
   Future<void> onLoad() async {
     await super.onLoad();
