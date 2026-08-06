@@ -57,7 +57,8 @@ class Player extends PositionComponent
 
   late final List<SpriteAnimation> _attackVariants;
   int _currentAttackVariant = 0;
-
+  double _ambientMutterTimer = 3; // first mutter after ~12s of walking
+  final math.Random _rng = math.Random();
   PlayerAnimState _state = PlayerAnimState.spawn;
 
   @override
@@ -212,6 +213,11 @@ class Player extends PositionComponent
         _setState(PlayerAnimState.walk);
       }
       position.add(combined * speed * dt);
+      _ambientMutterTimer -= dt;
+      if (_ambientMutterTimer <= 0) {
+        DungeonAudio.playerAmbientMutter();
+        _ambientMutterTimer = 10 + _rng.nextDouble() * 15; // next one in 10–25s
+      }
     }
     priority = position.y.toInt();
     if (_attackTimer > 0) _attackTimer -= dt;
@@ -280,8 +286,6 @@ class Player extends PositionComponent
       _isDead = true;
       DungeonAudio.playerDeath();
       _setState(PlayerAnimState.death);
-    } else {
-      DungeonAudio.playerHurt();
     }
   }
 

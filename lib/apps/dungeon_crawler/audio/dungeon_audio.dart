@@ -28,6 +28,7 @@ class DungeonAudio {
     'item_pickup.mp3',
     'potion_drink.mp3',
     'coin_collect.mp3',
+    'opendoor.mp3',
   ];
 
   static Future<void> preload() => FlameAudio.audioCache.loadAll(_files);
@@ -61,9 +62,10 @@ class DungeonAudio {
     FlameAudio.play(file, volume: volume);
   }
 
+  static void doorUnlock() => _playSfx('opendoor.mp3', minInterval: 0.5);
   static void playerWin() => _playVoice('player_win.mp3', priority: true);
   static void playerDeath() => _playVoice('player_death.mp3', priority: true);
-  static void playerHurt() => _playVoice('playerv2.mp3', volume: 0.8);
+  static void playerAmbientMutter() => _playVoice('playerv2.mp3', volume: 0.8);
   static void chaseAggro() => _playVoice('chasev2.mp3');
   static void patrolBark() => _playVoice('patrolv2.mp3', volume: 0.7);
 

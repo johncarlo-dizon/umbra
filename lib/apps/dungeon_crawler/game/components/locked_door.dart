@@ -1,7 +1,7 @@
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-
+import '../../audio/dungeon_audio.dart';
 import '../dungeon_game.dart';
 import 'player.dart';
 
@@ -67,6 +67,7 @@ class LockedDoor extends PositionComponent
   }
 
   void _openDoor() {
+    DungeonAudio.doorUnlock();
     _open = true;
     debugPrint('LockedDoor: opened with $requiresKey');
     if (_hitbox != null) {

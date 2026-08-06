@@ -71,20 +71,32 @@ class ItemPickup extends PositionComponent
         add(_animComponent!);
         break;
       case ItemKind.key:
-        // no art yet — flat placeholder, drawn in render() below
+        final keyImage = await gameRef.images.load('key_spritesheet.png');
+        final keySheet = SpriteSheet(
+          image: keyImage,
+          srcSize: Vector2(169, 335),
+        );
+        final keyAnim = keySheet.createAnimation(
+          row: 0,
+          stepTime: 0.15,
+          to: 4,
+          loop: true,
+        );
+        _animComponent = SpriteAnimationComponent(
+          animation: keyAnim,
+          size: Vector2(14, 28),
+          anchor: Anchor.center,
+          position: size / 2,
+        );
+        add(_animComponent!);
         break;
     }
   }
 
   @override
   void render(Canvas canvas) {
-    if (kind == ItemKind.key) {
-      canvas.drawRect(
-        Rect.fromLTWH(0, 0, size.x, size.y),
-        Paint()..color = _keyColor,
-      );
-    }
-    // potion/coin render themselves via their SpriteAnimationComponent child
+    // all three kinds (key/potion/coin) render via their
+    // SpriteAnimationComponent child — nothing to draw here directly
   }
 
   @override
