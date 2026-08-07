@@ -14,8 +14,14 @@ import 'package:flutter/material.dart';
 /// [description] is no longer printed inline (there's no card to put it
 /// in) — it now surfaces as a hover tooltip, matching how real desktop
 /// icons reveal their info on hover instead of always showing text.
+///
+/// Icons come from either [icon] (an [IconData] glyph, tinted white on a
+/// colored badge — used for the placeholder tile) or [iconAsset] (a custom
+/// PNG, shown at full color with no badge fill so the artwork isn't
+/// muddied). Exactly one of the two should be provided.
 class AppTile extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final String? iconAsset;
   final String name;
   final String description;
   final VoidCallback? onTap;
@@ -24,17 +30,22 @@ class AppTile extends StatelessWidget {
 
   const AppTile({
     super.key,
-    required this.icon,
+    this.icon,
+    this.iconAsset,
     required this.name,
     required this.description,
     this.onTap,
     this.isPlaceholder = false,
     this.color,
-  });
+  }) : assert(
+         icon != null || iconAsset != null,
+         'Provide either icon or iconAsset',
+       );
 
   @override
   Widget build(BuildContext context) {
     final tileColor = color ?? Theme.of(context).colorScheme.primary;
+    final useImage = iconAsset != null;
 
     final tile = InkWell(
       onTap: isPlaceholder ? null : onTap,
@@ -50,7 +61,7 @@ class AppTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isPlaceholder
                     ? Colors.white.withValues(alpha: 0.14)
-                    : tileColor,
+                    : (useImage ? Colors.transparent : tileColor),
                 borderRadius: BorderRadius.circular(18),
                 border: isPlaceholder
                     ? Border.all(
@@ -68,7 +79,12 @@ class AppTile extends StatelessWidget {
                         ),
                       ],
               ),
-              child: Icon(icon, size: 26, color: Colors.white),
+              child: useImage
+                  ? Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Image.asset(iconAsset!, fit: BoxFit.contain),
+                    )
+                  : Icon(icon, size: 26, color: Colors.white),
             ),
             const SizedBox(height: 8),
             SizedBox(

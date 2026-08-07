@@ -53,39 +53,39 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
 
   static const List<_AppEntry> _apps = [
     _AppEntry(
-      icon: Icons.menu_book_rounded,
+      iconAsset: 'assets/icon/comics.png',
       name: 'MangaHub',
       description: 'Read manga and webtoons',
       route: '/mangahub',
       color: AppColors.orange,
     ),
     _AppEntry(
-      icon: Icons.fitness_center,
+      iconAsset: 'assets/icon/fitness.png',
       name: 'FitLog',
       description: 'Log workouts and track progress',
       route: '/workouts',
       color: Colors.teal,
     ),
     _AppEntry(
-      icon: Icons.calculate_outlined,
+      iconAsset: 'assets/icon/calculator.png',
       name: 'Calculator',
       description: 'Quick everyday calculations',
       route: '/calculator',
-      color: AppColors.orange, // or a new distinct color
+      color: AppColors.orange,
     ),
     _AppEntry(
-      icon: Icons.swap_horiz,
+      iconAsset: 'assets/icon/unit.png',
       name: 'Unit Converter',
       description: 'Length, weight, temperature & more',
       route: '/unit-converter',
       color: Colors.teal,
     ),
     _AppEntry(
-      icon: Icons.castle, // or Icons.shield / Icons.videogame_asset
+      iconAsset: 'assets/icon/dungeon.png',
       name: 'Dungeon Crawler',
       description: 'Fight through a dungeon, collect keys, find the exit.',
       route: '/dungeon-crawler',
-      color: AppColors.orange, // or a new distinct color
+      color: AppColors.orange,
     ),
   ];
 
@@ -354,7 +354,7 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
     if (index < _apps.length) {
       final app = _apps[index];
       return AppTile(
-        icon: app.icon,
+        iconAsset: app.iconAsset,
         name: app.name,
         description: app.description,
         color: app.color,
@@ -431,7 +431,10 @@ class _SearchResultsPanel extends StatelessWidget {
                 return ListTile(
                   leading: CircleAvatar(
                     backgroundColor: app.color.withValues(alpha: 0.16),
-                    child: Icon(app.icon, color: app.color),
+                    child: Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Image.asset(app.iconAsset, fit: BoxFit.contain),
+                    ),
                   ),
                   title: Text(app.name),
                   subtitle: Text(app.description),
@@ -860,14 +863,14 @@ class _LiveClockState extends State<_LiveClock> {
 }
 
 class _AppEntry {
-  final IconData icon;
+  final String iconAsset;
   final String name;
   final String description;
   final String route;
   final Color color;
 
   const _AppEntry({
-    required this.icon,
+    required this.iconAsset,
     required this.name,
     required this.description,
     required this.route,
