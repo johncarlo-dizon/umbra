@@ -5,6 +5,8 @@ import 'package:flame/sprite.dart';
 import 'package:flutter/material.dart';
 import '../../audio/dungeon_audio.dart';
 import 'player.dart';
+import 'dart:math' as math;
+import 'wall_block.dart';
 
 enum EnemyFacing { up, down, left, right }
 
@@ -82,6 +84,39 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
     };
   }
 
+  void _pushOutOfSolid(PositionComponent other) {
+    final selfRect = Rect.fromLTWH(
+      position.x - size.x / 2,
+      position.y - size.y / 2,
+      size.x,
+      size.y,
+    );
+    final otherRect = Rect.fromLTWH(
+      other.position.x,
+      other.position.y,
+      other.size.x,
+      other.size.y,
+    );
+
+    final overlapX =
+        math.min(selfRect.right, otherRect.right) -
+        math.max(selfRect.left, otherRect.left);
+    final overlapY =
+        math.min(selfRect.bottom, otherRect.bottom) -
+        math.max(selfRect.top, otherRect.top);
+    if (overlapX <= 0 || overlapY <= 0) return;
+
+    if (overlapX < overlapY) {
+      position.x += selfRect.center.dx < otherRect.center.dx
+          ? -overlapX
+          : overlapX;
+    } else {
+      position.y += selfRect.center.dy < otherRect.center.dy
+          ? -overlapY
+          : overlapY;
+    }
+  }
+
   void setFacingFromVelocity(Vector2 velocity) {
     if (_isAttacking || _isDying) return;
     if (velocity.length2 < 0.0001) return;
@@ -140,6 +175,7 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollision(intersectionPoints, other);
+    if (other is WallBlock) _pushOutOfSolid(other);
     if (other is Player && !isDead && _attackAnimCooldown <= 0) {
       _attackAnimCooldown = _attackAnimInterval;
       _playAttackAnimation();

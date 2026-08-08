@@ -6,7 +6,11 @@ import 'package:flutter/material.dart';
 /// follows the normal `Theme.of(context)` rule rather than the HUD's
 /// fixed-color exception.
 class GameOverOverlay extends StatelessWidget {
-  const GameOverOverlay({super.key, required this.onRetry, required this.onExit});
+  const GameOverOverlay({
+    super.key,
+    required this.onRetry,
+    required this.onExit,
+  });
 
   final VoidCallback onRetry;
   final VoidCallback onExit;
@@ -24,7 +28,11 @@ class GameOverOverlay extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.dangerous_outlined, size: 48, color: theme.colorScheme.error),
+                Icon(
+                  Icons.dangerous_outlined,
+                  size: 48,
+                  color: theme.colorScheme.error,
+                ),
                 const SizedBox(height: 12),
                 Text('You Died', style: theme.textTheme.headlineSmall),
                 const SizedBox(height: 8),
@@ -40,7 +48,10 @@ class GameOverOverlay extends StatelessWidget {
                   label: const Text('Try Again'),
                 ),
                 const SizedBox(height: 8),
-                TextButton(onPressed: onExit, child: const Text('Back to Umbra')),
+                TextButton(
+                  onPressed: onExit,
+                  child: const Text('Back to Menu'),
+                ),
               ],
             ),
           ),

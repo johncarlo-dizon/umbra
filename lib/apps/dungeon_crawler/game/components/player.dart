@@ -3,7 +3,6 @@ import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'dart:math' as math;
 import 'wall_block.dart';
 import '../dungeon_game.dart';
@@ -123,6 +122,11 @@ class Player extends PositionComponent
     _state = PlayerAnimState.spawn;
     _animComponent.animationTicker?.onComplete = () =>
         _setState(PlayerAnimState.walk);
+  }
+
+  void reviveVisual() {
+    _isDead = false;
+    _setState(PlayerAnimState.walk);
   }
 
   void _setState(PlayerAnimState newState) {

@@ -3,7 +3,8 @@ import 'dart:io' show Platform;
 import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-
+import '../services/leaderboard_service.dart';
+import '../widgets/revive_overlay.dart';
 import '../game/dungeon_game.dart';
 import '../models/dungeon_game_state.dart';
 import '../models/inventory.dart';
@@ -12,6 +13,9 @@ import '../widgets/hp_bar_overlay.dart';
 import '../widgets/inventory_overlay.dart';
 import '../widgets/touch_controls_overlay.dart';
 import '../widgets/victory_overlay.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/supabase_client.dart';
+import '../../../core/shell_nav_state.dart';
 
 /// Top-level screen for the Dungeon Crawler sub-app.
 ///
@@ -33,10 +37,31 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
   late DungeonGameState _gameState;
   late Inventory _inventory;
   late DungeonGame _game;
+  bool _blockedForGuest = false;
+  bool _scoreSubmitted = false;
+
+  void _submitScoreOnce() {
+    if (_scoreSubmitted) return;
+    _scoreSubmitted = true;
+    LeaderboardService.submitRunResult(
+      floorReached: _game.currentLevelNumber,
+      coinsCollected: _inventory.totalCoinsCollected,
+      revivesUsed: _gameState.revivesUsedThisRun,
+    );
+  }
 
   @override
   void initState() {
     super.initState();
+    if (!SupabaseService.isLoggedIn) {
+      _blockedForGuest = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ShellNavState.requestedTabIndex.value = ShellNavState.profileTab;
+        context.go('/');
+      });
+      return;
+    }
     _startNewRun();
   }
 
@@ -70,6 +95,12 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_blockedForGuest) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -125,6 +156,17 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
           ValueListenableBuilder<RunStatus>(
             valueListenable: _gameState.status,
             builder: (context, status, _) {
+              if (status == RunStatus.downed) {
+                return ReviveOverlay(
+                  gameState: _gameState,
+                  inventory: _inventory,
+                  player: _game.player,
+                  onGiveUp: () => _gameState.declineRevive(),
+                );
+              }
+              if (status == RunStatus.lost || status == RunStatus.won) {
+                _submitScoreOnce();
+              }
               if (status == RunStatus.lost) {
                 return GameOverOverlay(
                   onRetry: _retry,

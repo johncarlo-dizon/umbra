@@ -20,7 +20,8 @@ class Inventory extends ChangeNotifier {
   final List<InventoryItem> _keys = [];
   int _potions = 0;
   int _coins = 0;
-
+  int _totalCoinsCollected = 0;
+  int get totalCoinsCollected => _totalCoinsCollected;
   List<InventoryItem> get keys => List.unmodifiable(_keys);
   int get potions => _potions;
   int get coins => _coins;
@@ -37,9 +38,17 @@ class Inventory extends ChangeNotifier {
         break;
       case ItemKind.coin:
         _coins++;
+        _totalCoinsCollected++;
         break;
     }
     notifyListeners();
+  }
+
+  bool spendCoins(int amount) {
+    if (_coins < amount) return false;
+    _coins -= amount;
+    notifyListeners();
+    return true;
   }
 
   /// Consumes a potion for healing. Returns true if one was available.

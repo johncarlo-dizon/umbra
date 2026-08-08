@@ -1,5 +1,4 @@
 import 'package:flame_audio/flame_audio.dart';
-import 'package:audioplayers/audioplayers.dart';
 
 class DungeonAudio {
   DungeonAudio._();

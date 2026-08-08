@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 
-enum RunStatus { playing, won, lost }
+enum RunStatus { playing, won, lost, downed }
 
 class DungeonGameState {
   DungeonGameState({this.maxHp = 100}) : hp = ValueNotifier(maxHp);
@@ -10,16 +10,28 @@ class DungeonGameState {
   final ValueNotifier<int> hp;
   final ValueNotifier<RunStatus> status = ValueNotifier(RunStatus.playing);
   final ValueNotifier<String?> banner = ValueNotifier(null);
+  int revivesUsedThisRun = 0;
+  int get reviveCost => 10 + (revivesUsedThisRun * 15); // 10, 25, 40, 55...
+
+  void revive({int healTo = 50}) {
+    if (status.value != RunStatus.downed) return;
+    revivesUsedThisRun++;
+    hp.value = healTo;
+    status.value = RunStatus.playing;
+  }
+
+  void declineRevive() {
+    if (status.value != RunStatus.downed) return;
+    status.value = RunStatus.lost;
+  }
 
   void damage(int amount) {
     if (status.value != RunStatus.playing) return;
     final next = (hp.value - amount).clamp(0, maxHp);
     hp.value = next;
     if (next <= 0) {
-      // give the death animation (~4 frames @ 0.18s ≈ 0.7s) time to play
-      // before the Game Over overlay covers the screen
       Future.delayed(const Duration(milliseconds: 900), () {
-        status.value = RunStatus.lost;
+        status.value = RunStatus.downed;
       });
     }
   }

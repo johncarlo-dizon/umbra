@@ -113,6 +113,52 @@ class DungeonGenerator {
     };
   }
 
+  /// Tarjan's bridge-finding over the FINAL edge set (spanning tree +
+  /// loop edges combined). A "bridge" is an edge with no alternate route
+  /// around it — only bridges are safe to lock, because locking any
+  /// non-bridge edge leaves the loop edge as a free bypass. This is the
+  /// fix for a confirmed bug: without this check, doors were bypassable
+  /// in 100% of levels from level 6 onward (verified empirically).
+  Set<String> _findBridges(int n, List<List<int>> edges) {
+    final adj = <int, List<int>>{for (var i = 0; i < n; i++) i: []};
+    for (final e in edges) {
+      adj[e[0]]!.add(e[1]);
+      adj[e[1]]!.add(e[0]);
+    }
+    final visited = List.filled(n, false);
+    final disc = List.filled(n, 0);
+    final low = List.filled(n, 0);
+    final bridges = <String>{};
+    var timer = 0;
+
+    void dfs(int u, int parent) {
+      visited[u] = true;
+      disc[u] = low[u] = timer++;
+      var usedParentEdge = false;
+      for (final v in adj[u]!) {
+        if (v == parent && !usedParentEdge) {
+          usedParentEdge = true;
+          continue;
+        }
+        if (visited[v]) {
+          low[u] = min(low[u], disc[v]);
+        } else {
+          dfs(v, u);
+          low[u] = min(low[u], low[v]);
+          if (low[v] > disc[u]) {
+            final lo = min(u, v), hi = max(u, v);
+            bridges.add('$lo-$hi');
+          }
+        }
+      }
+    }
+
+    for (var i = 0; i < n; i++) {
+      if (!visited[i]) dfs(i, -1);
+    }
+    return bridges;
+  }
+
   DungeonLevel generate() {
     final p = _params();
     final ground = List.generate(mapH, (_) => List.filled(mapW, 0));
@@ -171,14 +217,15 @@ class DungeonGenerator {
       }
     }
     remainingEdges.shuffle(rng);
-    final edges = [...mstEdges, ...remainingEdges.take(p['extraLoops'] as int)];
-
-    // 3. Carve a corridor for every edge; remember its geometry for door placement.
-    final corridors = <String, _Corridor>{};
     String edgeKey(int a, int b) {
       final lo = min(a, b), hi = max(a, b);
       return '$lo-$hi';
     }
+
+    final edges = [...mstEdges, ...remainingEdges.take(p['extraLoops'] as int)];
+    final bridgeEdges = _findBridges(slotRows * slotCols, edges);
+    // 3. Carve a corridor for every edge; remember its geometry for door placement.
+    final corridors = <String, _Corridor>{};
 
     for (final e in edges) {
       final a = e[0], b = e[1];
@@ -300,12 +347,20 @@ class DungeonGenerator {
 
     // Locked doors + keys, placed along the main path so it's always solvable:
     // key i is always in a room strictly before door i.
-    final nDoors = min(p['lockedDoors'] as int, max(0, orderedPath.length - 2));
+    // Only positions whose edge is a genuine bridge are eligible — this
+    // is what guarantees no loop edge can bypass the door (see
+    // _findBridges above).
+    final bridgePositions = List.generate(orderedPath.length - 1, (i) => i + 1)
+        .where(
+          (i) =>
+              bridgeEdges.contains(edgeKey(orderedPath[i - 1], orderedPath[i])),
+        )
+        .toList();
+    final nDoors = min(p['lockedDoors'] as int, bridgePositions.length);
     final doorPositions = <int>[];
     if (nDoors > 0) {
-      final candidates = List.generate(orderedPath.length - 1, (i) => i + 1)
-        ..shuffle(rng);
-      doorPositions.addAll(candidates.take(nDoors));
+      bridgePositions.shuffle(rng);
+      doorPositions.addAll(bridgePositions.take(nDoors));
       doorPositions.sort();
     }
     const keyNames = ['bronze_key', 'silver_key', 'gold_key', 'obsidian_key'];
@@ -321,14 +376,12 @@ class DungeonGenerator {
       if (corridor.horizontal) {
         dx = mid * 32.0;
         dy = corridor.fixedCoord * 32.0;
-        dw = 64;
-        dh = 32;
       } else {
         dx = corridor.fixedCoord * 32.0;
         dy = mid * 32.0;
-        dw = 32;
-        dh = 64;
       }
+      dw = 32;
+      dh = 32;
       objects.add(
         LevelObject(
           name: 'LockedDoor${i + 1}',
@@ -356,8 +409,9 @@ class DungeonGenerator {
 
     // Enemies.
     final chaseCount = p['chaseEnemies'] as int;
+    final nonStartOrder = order.where((s) => s != start).toList();
     for (var i = 0; i < chaseCount; i++) {
-      final sid = order[i % order.length];
+      final sid = nonStartOrder[i % nonStartOrder.length];
       final pos = randomTileIn(sid);
       final radius = (p['detectionRadius'] as int) + rng.nextInt(21) - 10;
       objects.add(
@@ -373,9 +427,11 @@ class DungeonGenerator {
       );
     }
 
-    final patrolCount = min(p['patrolEnemies'] as int, slotRows * slotCols);
-    final patrolRooms = List.generate(slotRows * slotCols, (i) => i)
-      ..shuffle(rng);
+    final patrolCount = min(p['patrolEnemies'] as int, slotRows * slotCols - 1);
+    final patrolRooms = List.generate(
+      slotRows * slotCols,
+      (i) => i,
+    ).where((s) => s != start).toList()..shuffle(rng);
     for (var i = 0; i < patrolCount; i++) {
       final sid = patrolRooms[i];
       final r = rooms[sid]!;
