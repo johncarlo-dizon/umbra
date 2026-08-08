@@ -136,6 +136,7 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
                 ),
                 if (_isTouchPlatform(context))
                   TouchControlsOverlay(game: _game),
+                if (!_isTouchPlatform(context)) const _KeyboardHintOverlay(),
                 Positioned(
                   top: 16,
                   left: 210,
@@ -179,6 +180,62 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _KeyboardHintOverlay extends StatelessWidget {
+  const _KeyboardHintOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: 16,
+      bottom: 16,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _HintLine(keys: 'WASD / Arrows', action: 'Move'),
+            _HintLine(keys: 'Space / J', action: 'Attack'),
+            _HintLine(keys: 'E', action: 'Drink Potion'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HintLine extends StatelessWidget {
+  const _HintLine({required this.keys, required this.action});
+  final String keys;
+  final String action;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(fontSize: 12, color: Colors.white70),
+          children: [
+            TextSpan(
+              text: '$keys  ',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            TextSpan(text: action),
+          ],
+        ),
       ),
     );
   }
