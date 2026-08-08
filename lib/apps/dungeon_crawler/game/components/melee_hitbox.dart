@@ -1,10 +1,14 @@
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flutter/material.dart';
 
 import '../../audio/dungeon_audio.dart';
+import '../dungeon_game.dart';
 import 'enemy_base.dart';
+import 'damage_number.dart';
 
-class MeleeHitbox extends PositionComponent with CollisionCallbacks {
+class MeleeHitbox extends PositionComponent
+    with CollisionCallbacks, HasGameRef<DungeonGame> {
   MeleeHitbox({
     required Vector2 position,
     required Vector2 size,
@@ -45,6 +49,13 @@ class MeleeHitbox extends PositionComponent with CollisionCallbacks {
       _alreadyHit.add(other);
       other.takeDamage(damage);
       DungeonAudio.attackHit();
+      gameRef.addComponentToWorld(
+        DamageNumber(
+          position: other.position.clone() + Vector2(0, -20),
+          amount: damage,
+          color: Colors.white,
+        ),
+      );
     }
   }
 }

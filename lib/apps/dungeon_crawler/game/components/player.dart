@@ -10,6 +10,8 @@ import 'enemy_base.dart';
 import 'melee_hitbox.dart';
 import 'locked_door.dart';
 import '../../audio/dungeon_audio.dart';
+import 'package:flame/effects.dart';
+import 'damage_number.dart';
 
 enum FacingDirection { up, down, left, right }
 
@@ -122,6 +124,17 @@ class Player extends PositionComponent
     _state = PlayerAnimState.spawn;
     _animComponent.animationTicker?.onComplete = () =>
         _setState(PlayerAnimState.walk);
+  }
+
+  void _flashHit() {
+    _animComponent.add(
+      ColorEffect(
+        Colors.red,
+        EffectController(duration: 0.08, alternate: true),
+        opacityFrom: 0.0,
+        opacityTo: 0.6,
+      ),
+    );
   }
 
   void reviveVisual() {
@@ -292,6 +305,14 @@ class Player extends PositionComponent
     if (_invulnerable || _isDead) return;
     _invulnerable = true;
     _invulnTimer = invulnDuration;
+    _flashHit();
+    gameRef.addComponentToWorld(
+      DamageNumber(
+        position: position.clone() + Vector2(0, -20),
+        amount: amount,
+        color: Colors.red,
+      ),
+    );
     gameRef.gameState.damage(amount);
     if (gameRef.gameState.hp.value <= 0) {
       _isDead = true;

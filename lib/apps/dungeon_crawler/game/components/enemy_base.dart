@@ -7,6 +7,7 @@ import '../../audio/dungeon_audio.dart';
 import 'player.dart';
 import 'dart:math' as math;
 import 'wall_block.dart';
+import 'package:flame/effects.dart';
 
 enum EnemyFacing { up, down, left, right }
 
@@ -84,6 +85,17 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
     };
   }
 
+  void _flashHit() {
+    animComponent.add(
+      ColorEffect(
+        Colors.white,
+        EffectController(duration: 0.08, alternate: true),
+        opacityFrom: 0.0,
+        opacityTo: 0.7,
+      ),
+    );
+  }
+
   void _pushOutOfSolid(PositionComponent other) {
     final selfRect = Rect.fromLTWH(
       position.x - size.x / 2,
@@ -152,6 +164,7 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
   void takeDamage(int amount) {
     if (isDead) return;
     hp = (hp - amount).clamp(0, maxHp);
+    _flashHit();
     if (isDead) onDeath();
   }
 
