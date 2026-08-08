@@ -43,7 +43,7 @@ class DungeonGame extends FlameGame
 
   final DungeonGameState gameState;
   final Inventory inventory;
-
+  DungeonLevel? currentLevel;
   Player? player;
   late final World gameWorld;
   late final CameraComponent gameCamera;
@@ -88,7 +88,7 @@ class DungeonGame extends FlameGame
       seed: seed,
       isFinalLevel: isFinal,
     ).generate();
-
+    currentLevel = level;
     gameWorld.add(DungeonTilemapComponent(level: level, tileSize: tileSize));
 
     _buildWallCollisions(level);
@@ -97,6 +97,7 @@ class DungeonGame extends FlameGame
     if (player != null) {
       gameCamera.follow(player!, snap: true);
     }
+    gameState.levelChangeCounter.value++;
   }
 
   /// Removes everything from the previous level (tiles, walls, enemies,

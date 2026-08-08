@@ -12,7 +12,7 @@ class DungeonGameState {
   final ValueNotifier<String?> banner = ValueNotifier(null);
   int revivesUsedThisRun = 0;
   int get reviveCost => 10 + (revivesUsedThisRun * 15); // 10, 25, 40, 55...
-
+  final ValueNotifier<int> levelChangeCounter = ValueNotifier(0);
   void revive({int healTo = 50}) {
     if (status.value != RunStatus.downed) return;
     revivesUsedThisRun++;
@@ -63,12 +63,14 @@ class DungeonGameState {
   }
 
   void reset() {
+    levelChangeCounter.value = 0;
     hp.value = maxHp;
     status.value = RunStatus.playing;
     banner.value = null;
   }
 
   void dispose() {
+    levelChangeCounter.dispose();
     hp.dispose();
     status.dispose();
     banner.dispose();

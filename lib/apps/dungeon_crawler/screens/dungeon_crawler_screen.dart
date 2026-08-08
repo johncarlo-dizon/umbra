@@ -13,6 +13,7 @@ import '../widgets/victory_overlay.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/supabase_client.dart';
 import '../../../core/shell_nav_state.dart';
+import '../widgets/minimap_overlay.dart';
 
 /// Top-level screen for the Dungeon Crawler sub-app.
 ///
@@ -105,6 +106,7 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
               children: [
                 HpBarOverlay(gameState: _gameState),
                 InventoryOverlay(inventory: _inventory),
+                MinimapOverlay(game: _game, gameState: _gameState),
                 ValueListenableBuilder<String?>(
                   valueListenable: _gameState.banner,
                   builder: (context, text, _) {

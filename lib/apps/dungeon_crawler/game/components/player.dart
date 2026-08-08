@@ -34,7 +34,7 @@ class Player extends PositionComponent
   static const int maxHp = 100;
   static const double attackCooldown = 0.45;
   static const int potionHealAmount = 35;
-
+  final ValueNotifier<Vector2> positionNotifier = ValueNotifier(Vector2.zero());
   final Vector2 _keyboardDirection = Vector2.zero();
   Vector2 joystickDirection = Vector2.zero();
 
@@ -197,6 +197,7 @@ class Player extends PositionComponent
 
   @override
   void update(double dt) {
+    positionNotifier.value = position.clone();
     super.update(dt);
     if (_isDead) return;
 
@@ -229,6 +230,12 @@ class Player extends PositionComponent
       _invulnTimer -= dt;
       if (_invulnTimer <= 0) _invulnerable = false;
     }
+  }
+
+  @override
+  void onRemove() {
+    positionNotifier.dispose();
+    super.onRemove();
   }
 
   void attack() {
