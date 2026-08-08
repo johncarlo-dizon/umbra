@@ -1,7 +1,4 @@
-import 'dart:io' show Platform;
-
 import 'package:flame/game.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../services/leaderboard_service.dart';
 import '../widgets/revive_overlay.dart';
@@ -78,13 +75,10 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
     });
   }
 
-  bool get _isTouchPlatform {
-    if (kIsWeb) return false; // web always gets keyboard controls in-browser
-    try {
-      return Platform.isAndroid || Platform.isIOS;
-    } catch (_) {
-      return false;
-    }
+  static const double _touchControlsBreakpoint = 700;
+
+  bool _isTouchPlatform(BuildContext context) {
+    return MediaQuery.sizeOf(context).width < _touchControlsBreakpoint;
   }
 
   @override
@@ -140,7 +134,8 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
                     );
                   },
                 ),
-                if (_isTouchPlatform) TouchControlsOverlay(game: _game),
+                if (_isTouchPlatform(context))
+                  TouchControlsOverlay(game: _game),
                 Positioned(
                   top: 16,
                   left: 210,
