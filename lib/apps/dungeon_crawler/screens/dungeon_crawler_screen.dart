@@ -14,16 +14,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/supabase_client.dart';
 import '../../../core/shell_nav_state.dart';
 import '../widgets/minimap_overlay.dart';
+import '../services/pet_progress_service.dart';
+import '../models/pet_definition.dart';
 
-/// Top-level screen for the Dungeon Crawler sub-app.
-///
-/// Deliberately does NOT use the `Align + ConstrainedBox(maxWidth: 480)`
-/// wrapper every other Umbra screen uses (see the "Adding a new sub-app"
-/// checklist, item 9) — that pattern is for form/list-style content that
-/// looks broken stretched full-width. A game canvas is the opposite: it
-/// needs the full viewport to be playable, so this screen intentionally
-/// breaks from that convention. Everything else in the checklist still
-/// applies (own folder, own routes file, no cross-app imports, etc).
 class DungeonCrawlerScreen extends StatefulWidget {
   const DungeonCrawlerScreen({super.key});
 
@@ -34,15 +27,16 @@ class DungeonCrawlerScreen extends StatefulWidget {
 class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
   late DungeonGameState _gameState;
   late Inventory _inventory;
-  late DungeonGame _game;
+  DungeonGame? _game;
   bool _blockedForGuest = false;
   bool _scoreSubmitted = false;
 
-  void _submitScoreOnce() {
+  void _submitScoreOnce(DungeonGame game) {
+    PetProgressService.addGemsEarned(_inventory.gemsCollected);
     if (_scoreSubmitted) return;
     _scoreSubmitted = true;
     LeaderboardService.submitRunResult(
-      floorReached: _game.currentLevelNumber,
+      floorReached: game.currentLevelNumber,
       coinsCollected: _inventory.totalCoinsCollected,
       revivesUsed: _gameState.revivesUsedThisRun,
     );
@@ -63,17 +57,31 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
     _startNewRun();
   }
 
-  void _startNewRun() {
+  Future<void> _startNewRun() async {
     _gameState = DungeonGameState();
     _inventory = Inventory();
-    _game = DungeonGame(gameState: _gameState, inventory: _inventory);
+    PetDefinition? equipped;
+    final progress = await PetProgressService.fetch();
+    if (progress.equippedPetId != null) {
+      equipped = PetDefinition.byId(progress.equippedPetId!);
+    }
+    final newGame = DungeonGame(
+      gameState: _gameState,
+      inventory: _inventory,
+      equippedPetDefinition: equipped,
+    );
+    if (mounted) {
+      setState(() {
+        _game = newGame;
+        _scoreSubmitted = false;
+      });
+    }
   }
 
   void _retry() {
-    setState(() {
-      _gameState.dispose();
-      _startNewRun();
-    });
+    _gameState.dispose();
+    setState(() => _game = null);
+    _startNewRun();
   }
 
   static const double _touchControlsBreakpoint = 700;
@@ -96,17 +104,26 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
         body: Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
+
+    final game = _game;
+    if (game == null) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Positioned.fill(child: GameWidget(game: _game)),
+          Positioned.fill(child: GameWidget(game: game)),
           SafeArea(
             child: Stack(
               children: [
                 HpBarOverlay(gameState: _gameState),
                 InventoryOverlay(inventory: _inventory),
-                MinimapOverlay(game: _game, gameState: _gameState),
+                MinimapOverlay(game: game, gameState: _gameState),
                 ValueListenableBuilder<String?>(
                   valueListenable: _gameState.banner,
                   builder: (context, text, _) {
@@ -136,8 +153,7 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
                     );
                   },
                 ),
-                if (_isTouchPlatform(context))
-                  TouchControlsOverlay(game: _game),
+                if (_isTouchPlatform(context)) TouchControlsOverlay(game: game),
                 if (!_isTouchPlatform(context)) const _KeyboardHintOverlay(),
                 Positioned(
                   top: 16,
@@ -158,12 +174,12 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
                 return ReviveOverlay(
                   gameState: _gameState,
                   inventory: _inventory,
-                  player: _game.player,
+                  player: game.player,
                   onGiveUp: () => _gameState.declineRevive(),
                 );
               }
               if (status == RunStatus.lost || status == RunStatus.won) {
-                _submitScoreOnce();
+                _submitScoreOnce(game);
               }
               if (status == RunStatus.lost) {
                 return GameOverOverlay(

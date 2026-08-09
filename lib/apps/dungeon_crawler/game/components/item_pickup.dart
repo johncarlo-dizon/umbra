@@ -1,7 +1,6 @@
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
-import 'package:flutter/material.dart';
 import '../../audio/dungeon_audio.dart';
 import '../dungeon_game.dart';
 import '../../models/inventory.dart';
@@ -88,13 +87,27 @@ class ItemPickup extends PositionComponent
         );
         add(_animComponent!);
         break;
+      case ItemKind.gem:
+        final gemImage = await gameRef.images.load('diamond.png');
+        final gemSheet = SpriteSheet(
+          image: gemImage,
+          srcSize: Vector2(228, 316),
+        );
+        final gemAnim = gemSheet.createAnimation(
+          row: 0,
+          stepTime: 0.15,
+          to: 4,
+          loop: true,
+        );
+        _animComponent = SpriteAnimationComponent(
+          animation: gemAnim,
+          size: Vector2(16, 22),
+          anchor: Anchor.center,
+          position: size / 2,
+        );
+        add(_animComponent!);
+        break;
     }
-  }
-
-  @override
-  void render(Canvas canvas) {
-    // all three kinds (key/potion/coin) render via their
-    // SpriteAnimationComponent child — nothing to draw here directly
   }
 
   @override

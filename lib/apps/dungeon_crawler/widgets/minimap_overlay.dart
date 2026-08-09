@@ -29,7 +29,7 @@ class MinimapOverlay extends StatelessWidget {
       right: 16,
       child: ValueListenableBuilder<int>(
         valueListenable: gameState.levelChangeCounter,
-        builder: (context, _, __) {
+        builder: (context, _, _) {
           final level = game.currentLevel;
           if (level == null) return const SizedBox.shrink();
 
@@ -48,7 +48,7 @@ class MinimapOverlay extends StatelessWidget {
               height: mapHeight * mmScale,
               child: ValueListenableBuilder<Vector2Value>(
                 valueListenable: _PlayerPositionAdapter(game),
-                builder: (context, playerPos, __) {
+                builder: (context, playerPos, _) {
                   return CustomPaint(
                     painter: _MinimapPainter(
                       level: level,
@@ -101,7 +101,6 @@ class _MinimapPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final floorPaint = Paint()..color = Colors.white24;
-    final wallPaint = Paint()..color = Colors.transparent;
 
     for (var y = 0; y < level.ground.length; y++) {
       for (var x = 0; x < level.ground[y].length; x++) {

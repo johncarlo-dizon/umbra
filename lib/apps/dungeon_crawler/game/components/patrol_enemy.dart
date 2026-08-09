@@ -30,6 +30,7 @@ class PatrolEnemy extends EnemyBase with HasGameRef<DungeonGame> {
 
   @override
   void updateAi(double dt) {
+    if (isStunned) return;
     _checkProximityBark();
 
     if (waypoints.isEmpty) {

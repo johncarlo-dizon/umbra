@@ -10,7 +10,7 @@ class InventoryItem {
   const InventoryItem({required this.id, required this.kind});
 }
 
-enum ItemKind { key, potion, coin }
+enum ItemKind { key, potion, coin, gem }
 
 /// Session-only game state for a single dungeon run. Deliberately NOT
 /// wired into Umbra's `AppSettingsState`/`SettingsService` — run progress
@@ -25,7 +25,8 @@ class Inventory extends ChangeNotifier {
   List<InventoryItem> get keys => List.unmodifiable(_keys);
   int get potions => _potions;
   int get coins => _coins;
-
+  int _gemsCollected = 0;
+  int get gemsCollected => _gemsCollected;
   bool hasKey(String keyId) => _keys.any((k) => k.id == keyId);
 
   void addItem(String id, ItemKind kind) {
@@ -39,6 +40,9 @@ class Inventory extends ChangeNotifier {
       case ItemKind.coin:
         _coins++;
         _totalCoinsCollected++;
+        break;
+      case ItemKind.gem:
+        _gemsCollected++;
         break;
     }
     notifyListeners();
@@ -63,6 +67,7 @@ class Inventory extends ChangeNotifier {
     _keys.clear();
     _potions = 0;
     _coins = 0;
+    _gemsCollected = 0;
     notifyListeners();
   }
 }

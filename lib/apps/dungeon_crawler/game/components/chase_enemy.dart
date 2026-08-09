@@ -25,6 +25,7 @@ class ChaseEnemy extends EnemyBase with HasGameRef<DungeonGame> {
 
   @override
   void updateAi(double dt) {
+    if (isStunned) return;
     final player = gameRef.player;
     if (player == null) {
       setFacingFromVelocity(Vector2.zero());

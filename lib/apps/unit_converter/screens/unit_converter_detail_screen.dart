@@ -93,7 +93,7 @@ class _UnitConverterDetailScreenState extends State<UnitConverterDetailScreen> {
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                     itemCount: otherUnits.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final unit = otherUnits[index];
                       final value = results[unit.id]!;

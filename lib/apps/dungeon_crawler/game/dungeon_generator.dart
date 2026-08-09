@@ -9,6 +9,7 @@
 // Drop this in e.g. lib/game/dungeon_generator.dart
 
 import 'dart:math';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 const int mapW = 30;
 const int mapH = 20;
@@ -110,6 +111,7 @@ class DungeonGenerator {
       'potions': max(1, 4 - level ~/ 3),
       'coins': 3 + level,
       'roomShrinkMax': min(2, level ~/ 4),
+      'gemChance': 0.3,
     };
   }
 
@@ -488,6 +490,27 @@ class DungeonGenerator {
       );
     }
 
+    final gemRoll = rng.nextDouble();
+    if (gemRoll < (p['gemChance'] as double)) {
+      final sid = order[rng.nextInt(order.length)];
+      final pos = randomTileIn(sid);
+
+      objects.add(
+        LevelObject(
+          name: 'Gem1',
+          type: 'Item',
+          x: pos[0],
+          y: pos[1],
+          width: 32,
+          height: 32,
+          properties: {'itemType': 'gem', 'itemId': 'gem_l${level}_1'},
+        ),
+      );
+    } else {
+      debugPrint(
+        'Level $level: no gem (roll=$gemRoll, needed < ${p["gemChance"]})',
+      );
+    }
     return DungeonLevel(
       level: level,
       ground: ground,

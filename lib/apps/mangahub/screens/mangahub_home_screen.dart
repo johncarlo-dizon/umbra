@@ -643,7 +643,7 @@ class _ContinueReadingRowState extends State<_ContinueReadingRow> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _inProgressManga.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final manga = _inProgressManga[index];
                 return SizedBox(

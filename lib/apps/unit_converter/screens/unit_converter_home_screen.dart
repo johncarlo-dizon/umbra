@@ -111,7 +111,7 @@ class _UnitConverterHomeScreenState extends State<UnitConverterHomeScreen> {
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                         sliver: SliverList.separated(
                           itemCount: _filtered.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (_, _) =>
                               const SizedBox(height: 12),
                           itemBuilder: (context, index) =>
                               _categoryCard(scheme, _filtered[index]),
@@ -229,7 +229,7 @@ class _UnitConverterHomeScreenState extends State<UnitConverterHomeScreen> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: recent.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
                 final category = recent[index];
                 final accent = category.accentColor;

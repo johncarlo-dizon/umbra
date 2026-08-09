@@ -12,7 +12,8 @@ import 'components/player.dart';
 import 'components/wall_block.dart';
 import 'dungeon_generator.dart';
 import 'dungeon_tilemap_component.dart';
-
+import '../models/pet_definition.dart';
+import 'components/battle_companion_pet.dart';
 import '../audio/dungeon_audio.dart';
 
 /// Root Flame game for the dungeon crawler sub-app.
@@ -26,7 +27,11 @@ import '../audio/dungeon_audio.dart';
 /// repositioned to the new level's `PlayerSpawn` rather than recreated.
 class DungeonGame extends FlameGame
     with HasCollisionDetection, HasKeyboardHandlerComponents {
-  DungeonGame({required this.gameState, required this.inventory});
+  DungeonGame({
+    required this.gameState,
+    required this.inventory,
+    this.equippedPetDefinition,
+  });
 
   static const double tileSize = 32;
 
@@ -40,14 +45,14 @@ class DungeonGame extends FlameGame
   static const int? runSeed = null;
 
   int currentLevelNumber = 1;
-
+  BattleCompanionPet? pet;
   final DungeonGameState gameState;
   final Inventory inventory;
   DungeonLevel? currentLevel;
   Player? player;
   late final World gameWorld;
   late final CameraComponent gameCamera;
-
+  final PetDefinition? equippedPetDefinition;
   @override
   Future<void> onLoad() async {
     await super.onLoad();
@@ -107,7 +112,7 @@ class DungeonGame extends FlameGame
   /// facing/animation state carry over naturally.
   void _clearLevelEntities() {
     for (final child in gameWorld.children.toList()) {
-      if (child == player) continue;
+      if (child == player || child == pet) continue;
       child.removeFromParent();
     }
   }
@@ -138,6 +143,16 @@ class DungeonGame extends FlameGame
             gameWorld.add(player!);
           } else {
             player!.position = center;
+          }
+          if (equippedPetDefinition != null && pet == null) {
+            pet = BattleCompanionPet(
+              definition: equippedPetDefinition!,
+              position: center + Vector2(20, 0),
+            );
+            gameWorld.add(pet!);
+          } else {
+            pet?.position = center + Vector2(20, 0);
+            pet?.fullHeal();
           }
           break;
 
@@ -209,6 +224,8 @@ class DungeonGame extends FlameGame
         return ItemKind.key;
       case 'potion':
         return ItemKind.potion;
+      case 'gem':
+        return ItemKind.gem;
       default:
         return ItemKind.coin;
     }

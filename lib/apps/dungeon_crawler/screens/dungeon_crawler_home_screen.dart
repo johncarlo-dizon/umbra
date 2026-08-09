@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/supabase_client.dart';
 import '../../../core/shell_nav_state.dart';
 import 'leaderboard_screen.dart';
+import 'pet_shop_screen.dart';
 
 /// Landing screen for the Dungeon Crawler sub-app — Play / Leaderboard
 /// menu, shown when the tile is tapped from Umbra's Home tab. Actual
@@ -84,6 +85,17 @@ class _DungeonCrawlerHomeScreenState extends State<DungeonCrawlerHomeScreen> {
                   ),
                   icon: const Icon(Icons.leaderboard),
                   label: const Text('Leaderboard'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(200, 48),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const PetShopScreen()),
+                  ),
+                  icon: const Icon(Icons.pets),
+                  label: const Text('Pet Shop'),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(200, 48),
                   ),

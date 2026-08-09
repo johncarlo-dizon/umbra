@@ -8,6 +8,8 @@ import 'player.dart';
 import 'dart:math' as math;
 import 'wall_block.dart';
 import 'package:flame/effects.dart';
+import 'battle_companion_pet.dart';
+import 'locked_door.dart';
 
 enum EnemyFacing { up, down, left, right }
 
@@ -83,6 +85,13 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
     animComponent.animationTicker?.onComplete = () {
       animComponent.animation = _walkAnimations[facing];
     };
+  }
+
+  double _stunnedUntil = 0;
+  bool get isStunned => _stunnedUntil > 0;
+
+  void applyStun(double duration) {
+    _stunnedUntil = duration;
   }
 
   void _flashHit() {
@@ -183,15 +192,24 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
     super.update(dt);
     if (_attackAnimCooldown > 0) _attackAnimCooldown -= dt;
     if (!isDead) updateAi(dt);
+    if (_stunnedUntil > 0) _stunnedUntil -= dt;
   }
 
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollision(intersectionPoints, other);
     if (other is WallBlock) _pushOutOfSolid(other);
+    if (other is LockedDoor && !other.isOpen) _pushOutOfSolid(other);
     if (other is Player && !isDead && _attackAnimCooldown <= 0) {
       _attackAnimCooldown = _attackAnimInterval;
       _playAttackAnimation();
+    }
+    if (other is BattleCompanionPet &&
+        !isDead &&
+        !other.isFainted &&
+        _attackAnimCooldown <= 0) {
+      _attackAnimCooldown = _attackAnimInterval;
+      other.takeDamage(contactDamage);
     }
   }
 
