@@ -9,6 +9,9 @@ import '../../models/pet_definition.dart';
 import '../dungeon_game.dart';
 import 'damage_number.dart';
 import 'enemy_base.dart';
+import 'dart:math' as math;
+import 'wall_block.dart';
+import 'locked_door.dart';
 
 enum PetFacing { down, up, right, left }
 
@@ -42,7 +45,8 @@ class BattleCompanionPet extends PositionComponent
   PetFacing _facing = PetFacing.down;
   bool _isFlipped = false;
   final Random _rng = Random();
-
+  double? _faintTimer;
+  static const double faintDisplayDuration = 1.2;
   late final SpriteAnimationComponent _animComponent;
   late final Map<PetFacing, SpriteAnimation> _walkAnimations;
   late final SpriteAnimation _attackAnimation;
@@ -51,7 +55,7 @@ class BattleCompanionPet extends PositionComponent
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    add(RectangleHitbox(collisionType: CollisionType.passive));
+    add(RectangleHitbox(collisionType: CollisionType.active));
 
     final image = await gameRef.images.load(definition.spriteSheet);
     final sheet = SpriteSheet(
@@ -93,8 +97,50 @@ class BattleCompanionPet extends PositionComponent
   /// carry-over, per the design plan.
   void fullHeal() {
     hp = definition.maxHp;
-    if (isFainted) return; // shouldn't happen post-heal, just defensive
-    _animComponent.animation = _walkAnimations[_facing];
+    _animComponent.children.whereType<ColorEffect>().toList().forEach(
+      (e) => e.removeFromParent(),
+    );
+    _animComponent.opacity = 1.0;
+    final safeFacing = _facing == PetFacing.left ? PetFacing.right : _facing;
+    _animComponent.animation = _walkAnimations[safeFacing];
+  }
+
+  void _pushOutOfSolid(PositionComponent other) {
+    final selfRect = Rect.fromLTWH(
+      position.x - size.x / 2,
+      position.y - size.y / 2,
+      size.x,
+      size.y,
+    );
+    final otherRect = Rect.fromLTWH(
+      other.position.x,
+      other.position.y,
+      other.size.x,
+      other.size.y,
+    );
+    final overlapX =
+        math.min(selfRect.right, otherRect.right) -
+        math.max(selfRect.left, otherRect.left);
+    final overlapY =
+        math.min(selfRect.bottom, otherRect.bottom) -
+        math.max(selfRect.top, otherRect.top);
+    if (overlapX <= 0 || overlapY <= 0) return;
+    if (overlapX < overlapY) {
+      position.x += selfRect.center.dx < otherRect.center.dx
+          ? -overlapX
+          : overlapX;
+    } else {
+      position.y += selfRect.center.dy < otherRect.center.dy
+          ? -overlapY
+          : overlapY;
+    }
+  }
+
+  @override
+  void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
+    super.onCollision(intersectionPoints, other);
+    if (other is WallBlock) _pushOutOfSolid(other);
+    if (other is LockedDoor && !other.isOpen) _pushOutOfSolid(other);
   }
 
   void takeDamage(int amount) {
@@ -117,29 +163,57 @@ class BattleCompanionPet extends PositionComponent
     );
     if (isFainted) {
       _animComponent.animation = _faintedAnimation;
+      _faintTimer = faintDisplayDuration;
     }
   }
+
+  static const double meleeRange = 20;
 
   @override
   void update(double dt) {
     super.update(dt);
+
+    if (_faintTimer != null) {
+      _faintTimer = _faintTimer! - dt;
+      if (_faintTimer! <= 0) {
+        _faintTimer = null;
+        if (gameRef.pet == this) gameRef.pet = null;
+        removeFromParent();
+      }
+      return;
+    }
+
     if (_attackCooldown > 0) _attackCooldown -= dt;
 
     final player = gameRef.player;
     if (player == null) return;
 
     if (isFainted) {
-      _followPlayer(player, dt); // still trails along, just can't fight
+      _followPlayer(player, dt);
       return;
     }
 
     if (_isAttacking) return;
 
     final target = _findNearestEnemy(player);
-    if (target != null && _attackCooldown <= 0) {
-      _attack(target);
+    if (target != null) {
+      final distance = (target.position - position).length;
+      if (distance <= meleeRange) {
+        if (_attackCooldown <= 0) _attack(target);
+      } else {
+        _moveToward(target.position, dt);
+      }
     } else {
       _followPlayer(player, dt);
+    }
+  }
+
+  void _moveToward(Vector2 targetPos, double dt) {
+    final toTarget = targetPos - position;
+    if (toTarget.length > 2) {
+      final velocity = toTarget.normalized() * followSpeed;
+      position.add(velocity * dt);
+      _setFacingFromVelocity(velocity);
     }
   }
 

@@ -34,7 +34,7 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
   bool _isAttacking = false;
   double _attackAnimCooldown = 0;
   static const double _attackAnimInterval = 0.8;
-
+  PositionComponent? _combatTarget;
   EnemyFacing facing = EnemyFacing.down;
 
   late final SpriteAnimationComponent animComponent;
@@ -43,6 +43,12 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
   late final SpriteAnimation _attackLeft;
   late final SpriteAnimation _deathAnim;
   late final SpriteAnimation _spawnAnim;
+
+  @override
+  void onCollisionEnd(PositionComponent other) {
+    super.onCollisionEnd(other);
+    if (other == _combatTarget) _combatTarget = null;
+  }
 
   @override
   Future<void> onLoad() async {
@@ -200,16 +206,29 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
     super.onCollision(intersectionPoints, other);
     if (other is WallBlock) _pushOutOfSolid(other);
     if (other is LockedDoor && !other.isOpen) _pushOutOfSolid(other);
-    if (other is Player && !isDead && _attackAnimCooldown <= 0) {
-      _attackAnimCooldown = _attackAnimInterval;
-      _playAttackAnimation();
+    // release the combat lock if the current target is no longer valid
+    // (e.g. the pet fainted mid-fight) — otherwise the enemy gets stuck
+    // "locked" onto a target it can never fight again, ignoring everyone
+    // else forever.
+    if (_combatTarget is BattleCompanionPet &&
+        (_combatTarget as BattleCompanionPet).isFainted) {
+      _combatTarget = null;
     }
-    if (other is BattleCompanionPet &&
-        !isDead &&
-        !other.isFainted &&
-        _attackAnimCooldown <= 0) {
-      _attackAnimCooldown = _attackAnimInterval;
-      other.takeDamage(contactDamage);
+
+    final isValidTarget =
+        (other is Player) || (other is BattleCompanionPet && !other.isFainted);
+    if (isValidTarget && !isDead) {
+      _combatTarget ??= other;
+      if (other != _combatTarget) return;
+      if (_attackAnimCooldown <= 0) {
+        _attackAnimCooldown = _attackAnimInterval;
+        _playAttackAnimation();
+        if (other is Player) {
+          other.takeDamage(contactDamage);
+        } else if (other is BattleCompanionPet) {
+          other.takeDamage(contactDamage);
+        }
+      }
     }
   }
 
