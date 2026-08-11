@@ -229,7 +229,7 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
     final petIsGuarding = pet != null && !pet.isFainted;
     final isValidTarget =
         (other is BattleCompanionPet && !other.isFainted) ||
-        (other is Player && !petIsGuarding);
+        (other is Player && !other.isDead && !petIsGuarding);
 
     if (isValidTarget && !isDead) {
       _combatTarget ??= other;

@@ -47,7 +47,7 @@ class Player extends PositionComponent
   static const double invulnDuration = 0.6;
   bool _isDead = false;
   bool _isFlipped = false;
-
+  bool get isDead => _isDead;
   late final SpriteAnimationComponent _animComponent;
 
   late final Map<FacingDirection, SpriteAnimation> _walkAnimations;
@@ -140,6 +140,7 @@ class Player extends PositionComponent
   void reviveVisual() {
     _isDead = false;
     _setState(PlayerAnimState.walk);
+    gameRef.resumeEngine();
   }
 
   void _setState(PlayerAnimState newState) {
@@ -318,6 +319,13 @@ class Player extends PositionComponent
       _isDead = true;
       DungeonAudio.playerDeath();
       _setState(PlayerAnimState.death);
+      // Freeze the whole simulation the instant the player dies — this is
+      // what actually stops enemies from continuing to chase, collide,
+      // and re-trigger attack sounds while the death modal is up. A
+      // per-component "is player dead" guard alone still lets a frame or
+      // two of stray AI/collision slip through; pausing the engine kills
+      // update() outright for everything in gameWorld.
+      gameRef.pauseEngine();
     }
   }
 
