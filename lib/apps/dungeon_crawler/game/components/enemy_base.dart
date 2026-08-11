@@ -44,6 +44,13 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
   late final SpriteAnimation _deathAnim;
   late final SpriteAnimation _spawnAnim;
 
+  /// Subclasses with access to the game's pet (typically via
+  /// `HasGameRef<DungeonGame>`) override this to return it. When it
+  /// returns a non-null, non-fainted pet, the pet is acting as the
+  /// player's protector and the player cannot be hit — see
+  /// [onCollision].
+  BattleCompanionPet? get guardPet => null;
+
   @override
   void onCollisionEnd(PositionComponent other) {
     super.onCollisionEnd(other);
@@ -215,8 +222,15 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
       _combatTarget = null;
     }
 
+    // Protector rule: while a guarding pet is alive, it's the only valid
+    // combat target — the player cannot be hit at all, even on direct
+    // contact. Once the pet faints, the player becomes fair game again.
+    final pet = guardPet;
+    final petIsGuarding = pet != null && !pet.isFainted;
     final isValidTarget =
-        (other is Player) || (other is BattleCompanionPet && !other.isFainted);
+        (other is BattleCompanionPet && !other.isFainted) ||
+        (other is Player && !petIsGuarding);
+
     if (isValidTarget && !isDead) {
       _combatTarget ??= other;
       if (other != _combatTarget) return;

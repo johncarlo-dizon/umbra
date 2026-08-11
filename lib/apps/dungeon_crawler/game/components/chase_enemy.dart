@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 
 import '../dungeon_game.dart';
+import 'battle_companion_pet.dart';
 import 'enemy_base.dart';
 import '../../audio/dungeon_audio.dart';
 
@@ -17,12 +18,24 @@ class ChaseEnemy extends EnemyBase with HasGameRef<DungeonGame> {
   final double detectionRadius;
   late final double giveUpRadius = detectionRadius * 1.6;
   static const double speed = 95;
+
+  /// How close the enemy is willing to close the gap to. Stopping short
+  /// instead of driving distance to ~0 avoids two problems: (1) getting
+  /// visually "glued" to the target since nothing pushes them apart, and
+  /// (2) `toTarget.normalized()` degenerating into NaN once the distance
+  /// collapses to zero, which used to permanently freeze the enemy after
+  /// its first successful hit (position became NaN and stayed NaN forever).
+  static const double meleeRange = 22;
+
   bool _chasing = false;
+
+  @override
+  BattleCompanionPet? get guardPet => gameRef.pet;
 
   @override
   void updateAi(double dt) {
     if (isStunned) return;
-    final target = _findNearestTarget();
+    final target = _findTarget();
     if (target == null) {
       setFacingFromVelocity(Vector2.zero());
       return;
@@ -38,7 +51,7 @@ class ChaseEnemy extends EnemyBase with HasGameRef<DungeonGame> {
       _chasing = false;
     }
 
-    if (_chasing && distance > 1) {
+    if (_chasing && distance > meleeRange) {
       final velocity = toTarget.normalized() * speed;
       position.add(velocity * dt);
       setFacingFromVelocity(velocity);
@@ -47,26 +60,12 @@ class ChaseEnemy extends EnemyBase with HasGameRef<DungeonGame> {
     }
   }
 
-  PositionComponent? _findNearestTarget() {
-    final player = gameRef.player;
+  /// Protector rule: the pet is the sole target as long as it's alive.
+  /// The enemy only turns its attention to the player once the pet has
+  /// fainted — it's a strict priority, not a "whichever is closer" pick.
+  PositionComponent? _findTarget() {
     final pet = gameRef.pet;
-    PositionComponent? nearest;
-    double nearestDist = double.infinity;
-
-    if (player != null) {
-      final d = (player.position - position).length;
-      if (d < nearestDist) {
-        nearest = player;
-        nearestDist = d;
-      }
-    }
-    if (pet != null && !pet.isFainted) {
-      final d = (pet.position - position).length;
-      if (d < nearestDist) {
-        nearest = pet;
-        nearestDist = d;
-      }
-    }
-    return nearest;
+    if (pet != null && !pet.isFainted) return pet;
+    return gameRef.player;
   }
 }
