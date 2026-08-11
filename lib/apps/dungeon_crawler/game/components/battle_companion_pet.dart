@@ -90,19 +90,52 @@ class BattleCompanionPet extends PositionComponent
       removeOnFinish: false,
     );
     add(_animComponent);
+
+    // Match Player's depth-sorting so the pet renders correctly relative
+    // to whatever floor/walls/enemies get built on later levels — see
+    // fullHeal() and update() for why this matters across transitions.
+    priority = position.y.toInt();
   }
 
   /// Called by `DungeonGame` on every level transition and player revive
   /// — "each floor/revive is a fresh start" for the pet, no partial-HP
   /// carry-over, per the design plan.
+  ///
+  /// Also fully resets any transient visual/animation state. The pet
+  /// component itself survives level transitions (unlike tiles/walls/
+  /// enemies, which are torn down and rebuilt — see
+  /// `DungeonGame._clearLevelEntities`), so anything left dangling here
+  /// — a mid-flash effect, a stuck attack animation, a stale render
+  /// priority — carries over silently into the next floor instead of
+  /// being naturally reset by recreation.
   void fullHeal() {
     hp = definition.maxHp;
-    _animComponent.children.whereType<ColorEffect>().toList().forEach(
+
+    // Clear ANY lingering effect (not just ColorEffect) so a heal can
+    // never leave a stuck opacity/tint mid-transition.
+    _animComponent.children.whereType<Effect>().toList().forEach(
       (e) => e.removeFromParent(),
     );
     _animComponent.opacity = 1.0;
+
+    // A faint that was mid-countdown when the floor changed must not be
+    // allowed to fire afterward and rip a freshly-healed pet back out
+    // of the world.
+    _faintTimer = null;
+
+    // Don't resume mid-attack into a new floor with a dangling
+    // onComplete callback pointing at old state.
+    _isAttacking = false;
+    _attackCooldown = 0;
+    _animComponent.animationTicker?.onComplete = null;
+
     final safeFacing = _facing == PetFacing.left ? PetFacing.right : _facing;
     _animComponent.animation = _walkAnimations[safeFacing];
+
+    // Re-sync depth sort immediately — don't wait for the next update()
+    // tick, since DungeonGame repositions the pet in the same frame the
+    // new level's tiles/walls get appended after it in the child list.
+    priority = position.y.toInt();
   }
 
   void _pushOutOfSolid(PositionComponent other) {
@@ -172,6 +205,10 @@ class BattleCompanionPet extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
+
+    // Keep depth-sorted against everything else every frame, same as
+    // Player — not just at spawn/heal time.
+    priority = position.y.toInt();
 
     if (_faintTimer != null) {
       _faintTimer = _faintTimer! - dt;
