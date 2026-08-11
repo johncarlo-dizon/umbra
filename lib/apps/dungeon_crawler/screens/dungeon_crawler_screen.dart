@@ -8,6 +8,7 @@ import '../models/inventory.dart';
 import '../widgets/game_over_overlay.dart';
 import '../widgets/hp_bar_overlay.dart';
 import '../widgets/inventory_overlay.dart';
+import '../widgets/pet_hp_bar_overlay.dart';
 import '../widgets/touch_controls_overlay.dart';
 import '../widgets/victory_overlay.dart';
 import 'package:go_router/go_router.dart';
@@ -122,6 +123,7 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
             child: Stack(
               children: [
                 HpBarOverlay(gameState: _gameState),
+                PetHpBarOverlay(game: game),
                 InventoryOverlay(inventory: _inventory),
                 MinimapOverlay(game: game, gameState: _gameState),
                 ValueListenableBuilder<String?>(

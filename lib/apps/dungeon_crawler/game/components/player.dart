@@ -297,6 +297,28 @@ class Player extends PositionComponent
     }
   }
 
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+    if (_isDead) return;
+    final barWidth = size.x;
+    const barHeight = 4.0;
+    final hp = gameRef.gameState.hp.value;
+    final maxHp = gameRef.gameState.maxHp;
+    canvas.drawRect(
+      Rect.fromLTWH(0, -8, barWidth, barHeight),
+      Paint()..color = Colors.black54,
+    );
+    final fraction = hp / maxHp;
+    canvas.drawRect(
+      Rect.fromLTWH(0, -8, barWidth * fraction, barHeight),
+      Paint()
+        ..color = fraction > 0.3
+            ? const Color(0xFFFFB74D)
+            : Colors.red.shade400,
+    );
+  }
+
   void playVictory() {
     DungeonAudio.playerWin();
     _setState(PlayerAnimState.victory);

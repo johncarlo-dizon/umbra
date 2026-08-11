@@ -305,7 +305,7 @@ class BattleCompanionPet extends PositionComponent
     );
     canvas.drawRect(
       Rect.fromLTWH(-1, -6, barWidth * (hp / definition.maxHp), barHeight),
-      Paint()..color = Colors.lightGreenAccent,
+      Paint()..color = Colors.tealAccent,
     );
   }
 }
