@@ -117,6 +117,77 @@ class DungeonGame extends FlameGame
     }
   }
 
+  /// Grid-based line-of-sight test between two world-space points. Walls
+  /// are stored in `currentLevel.walls` as a 2D grid where `2` means solid
+  /// (the same value `_buildWallCollisions` checks). This walks the grid
+  /// tile-by-tile along the ray from `from` to `to` and fails as soon as
+  /// it crosses a solid tile — so detection/chasing can no longer "see"
+  /// through walls just because something is within radius.
+  bool hasLineOfSight(Vector2 from, Vector2 to) {
+    final level = currentLevel;
+    if (level == null) return true;
+
+    final grid = level.walls;
+    final rows = grid.length;
+    if (rows == 0) return true;
+
+    bool isWall(int x, int y) {
+      if (y < 0 || y >= rows) return false;
+      final row = grid[y];
+      if (x < 0 || x >= row.length) return false;
+      return row[x] == 2;
+    }
+
+    int tileX(double worldX) => (worldX / tileSize).floor();
+    int tileY(double worldY) => (worldY / tileSize).floor();
+
+    var x = tileX(from.x);
+    var y = tileY(from.y);
+    final x1 = tileX(to.x);
+    final y1 = tileY(to.y);
+
+    if (x == x1 && y == y1) return true;
+
+    final dx = to.x - from.x;
+    final dy = to.y - from.y;
+
+    final stepX = dx > 0 ? 1 : (dx < 0 ? -1 : 0);
+    final stepY = dy > 0 ? 1 : (dy < 0 ? -1 : 0);
+
+    final tDeltaX = dx == 0 ? double.infinity : (tileSize / dx.abs());
+    final tDeltaY = dy == 0 ? double.infinity : (tileSize / dy.abs());
+
+    double tMaxX;
+    if (dx == 0) {
+      tMaxX = double.infinity;
+    } else {
+      final nextBoundaryX = stepX > 0 ? (x + 1) * tileSize : x * tileSize;
+      tMaxX = (nextBoundaryX - from.x) / dx;
+    }
+    double tMaxY;
+    if (dy == 0) {
+      tMaxY = double.infinity;
+    } else {
+      final nextBoundaryY = stepY > 0 ? (y + 1) * tileSize : y * tileSize;
+      tMaxY = (nextBoundaryY - from.y) / dy;
+    }
+
+    // Defensive cap so a malformed/edge-case level can't loop forever.
+    final maxSteps = rows + (grid.isNotEmpty ? grid[0].length : 0) + 4;
+    for (var i = 0; i < maxSteps; i++) {
+      if (tMaxX < tMaxY) {
+        x += stepX;
+        tMaxX += tDeltaX;
+      } else {
+        y += stepY;
+        tMaxY += tDeltaY;
+      }
+      if (isWall(x, y)) return false;
+      if (x == x1 && y == y1) return true;
+    }
+    return true;
+  }
+
   void _buildWallCollisions(DungeonLevel level) {
     for (var y = 0; y < level.walls.length; y++) {
       for (var x = 0; x < level.walls[y].length; x++) {

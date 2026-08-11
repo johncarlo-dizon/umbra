@@ -20,11 +20,8 @@ class ChaseEnemy extends EnemyBase with HasGameRef<DungeonGame> {
   static const double speed = 95;
 
   /// How close the enemy is willing to close the gap to. Stopping short
-  /// instead of driving distance to ~0 avoids two problems: (1) getting
-  /// visually "glued" to the target since nothing pushes them apart, and
-  /// (2) `toTarget.normalized()` degenerating into NaN once the distance
-  /// collapses to zero, which used to permanently freeze the enemy after
-  /// its first successful hit (position became NaN and stayed NaN forever).
+  /// instead of driving distance to ~0 avoids getting visually "glued" to
+  /// the target and avoids `toTarget.normalized()` degenerating to NaN.
   static const double meleeRange = 22;
 
   bool _chasing = false;
@@ -37,6 +34,7 @@ class ChaseEnemy extends EnemyBase with HasGameRef<DungeonGame> {
     if (isStunned) return;
     final target = _findTarget();
     if (target == null) {
+      _chasing = false;
       setFacingFromVelocity(Vector2.zero());
       return;
     }
@@ -44,10 +42,15 @@ class ChaseEnemy extends EnemyBase with HasGameRef<DungeonGame> {
     final toTarget = target.position - position;
     final distance = toTarget.length;
 
-    if (!_chasing && distance <= detectionRadius) {
+    // Walls block both sight and sound — an enemy standing on the other
+    // side of a wall block should neither notice the target nor keep
+    // tracking it once a wall slides between them mid-chase.
+    final canSee = gameRef.hasLineOfSight(position, target.position);
+
+    if (!_chasing && distance <= detectionRadius && canSee) {
       _chasing = true;
       DungeonAudio.chaseAggro();
-    } else if (_chasing && distance > giveUpRadius) {
+    } else if (_chasing && (distance > giveUpRadius || !canSee)) {
       _chasing = false;
     }
 
