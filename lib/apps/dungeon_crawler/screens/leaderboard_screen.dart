@@ -54,57 +54,57 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       );
                     }
                     final entries = snapshot.data ?? [];
-                    return Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                    if (entries.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
                           child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.leaderboard,
-                                size: 72,
+                                size: 64,
                                 color: theme.colorScheme.primary,
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                'Leaderboard',
-                                style: theme.textTheme.headlineMedium,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'The deepest, bravest crawlers.',
+                                'No runs recorded yet — be the first!',
                                 style: theme.textTheme.bodyMedium,
                                 textAlign: TextAlign.center,
                               ),
                             ],
                           ),
                         ),
-                        if (entries.isEmpty)
-                          Expanded(
-                            child: Center(
-                              child: Text(
-                                'No runs recorded yet — be the first!',
-                                style: theme.textTheme.bodyMedium,
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          )
-                        else
-                          Expanded(
-                            child: ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                              itemCount: entries.length,
-                              itemBuilder: (context, i) {
-                                final entry = entries[i];
-                                final isMe = entry.userId == myUserId;
-                                return _LeaderboardRow(
-                                  rank: i + 1,
-                                  entry: entry,
-                                  isMe: isMe,
-                                );
-                              },
-                            ),
-                          ),
+                      );
+                    }
+
+                    final myIndex = myUserId == null
+                        ? -1
+                        : entries.indexWhere((e) => e.userId == myUserId);
+
+                    return ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                      children: [
+                        Text(
+                          'The deepest, bravest crawlers.',
+                          style: theme.textTheme.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        _MyRankCard(
+                          rank: myIndex == -1 ? null : myIndex + 1,
+                          entry: myIndex == -1 ? null : entries[myIndex],
+                          totalShown: entries.length,
+                        ),
+                        const SizedBox(height: 20),
+                        ...List.generate(entries.length, (i) {
+                          final entry = entries[i];
+                          return _LeaderboardRow(
+                            rank: i + 1,
+                            entry: entry,
+                            isMe: entry.userId == myUserId,
+                          );
+                        }),
                       ],
                     );
                   },
@@ -113,6 +113,112 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _MyRankCard extends StatelessWidget {
+  const _MyRankCard({
+    required this.rank,
+    required this.entry,
+    required this.totalShown,
+  });
+
+  final int? rank;
+  final LeaderboardEntry? entry;
+  final int totalShown;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (rank == null || entry == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: DungeonTheme.dungeonWall,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: DungeonTheme.dungeonFloor),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.person_search,
+              color: theme.colorScheme.primary,
+              size: 22,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                "You're not ranked in the top $totalShown yet — dive deeper!",
+                style: theme.textTheme.bodyMedium,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: DungeonTheme.hpOrange.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: DungeonTheme.hpOrange, width: 2),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: DungeonTheme.hpOrange,
+            foregroundColor: DungeonTheme.voidBlack,
+            child: Text(
+              '$rank',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your Rank',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: DungeonTheme.hpOrange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.stairs,
+                      size: 14,
+                      color: DungeonTheme.potionGreen,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Floor ${entry!.bestFloor}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: DungeonTheme.potionGreen,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '${entry!.bestScore}',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: DungeonTheme.coinGold,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
