@@ -12,6 +12,7 @@ import 'dart:math' as math;
 import 'wall_block.dart';
 import 'locked_door.dart';
 import '../../audio/dungeon_audio.dart';
+import 'floating_label.dart';
 
 enum PetFacing { down, up, right, left }
 
@@ -266,6 +267,7 @@ class BattleCompanionPet extends PositionComponent
     _animComponent.scale.x = _isFlipped ? -1 : 1;
     _animComponent.animation = _attackAnimation;
     DungeonAudio.petAttack(definition.id);
+
     var damage = definition.damage;
     final isDoubleHit = _rng.nextDouble() < definition.doubleAttackChance;
     if (isDoubleHit) damage *= 2;
@@ -275,15 +277,53 @@ class BattleCompanionPet extends PositionComponent
       DamageNumber(
         position: target.position.clone() + Vector2(0, -20),
         amount: damage,
-        color: Colors.lightGreenAccent,
+        // gold instead of green when it's a crit, so it reads at a glance
+        color: isDoubleHit ? Colors.amberAccent : Colors.lightGreenAccent,
       ),
     );
-
-    if (_rng.nextDouble() < definition.lifestealChance) {
-      hp = (hp + (damage ~/ 2)).clamp(0, definition.maxHp);
+    if (isDoubleHit) {
+      gameRef.addComponentToWorld(
+        FloatingLabel(
+          text: '2x!',
+          position: target.position.clone() + Vector2(0, -34),
+          color: Colors.amberAccent,
+        ),
+      );
     }
-    if (_rng.nextDouble() < definition.stunChance) {
+
+    final didLifesteal = _rng.nextDouble() < definition.lifestealChance;
+    if (didLifesteal) {
+      final healed = damage ~/ 2;
+      hp = (hp + healed).clamp(0, definition.maxHp);
+      gameRef.addComponentToWorld(
+        DamageNumber(
+          position: position.clone() + Vector2(0, -20),
+          amount: healed,
+          color: Colors.pinkAccent, // heal number shown on the pet itself
+        ),
+      );
+    }
+
+    final didStun = _rng.nextDouble() < definition.stunChance;
+    if (didStun) {
       target.applyStun(definition.stunDuration);
+      gameRef.addComponentToWorld(
+        FloatingLabel(
+          text: 'STUN',
+          position: target.position.clone() + Vector2(0, -34),
+          color: Colors.lightBlueAccent,
+        ),
+      );
+      // quick blue flicker on the enemy so the stun is visible even if
+      // you miss the text popup
+      target.animComponent.add(
+        ColorEffect(
+          Colors.lightBlueAccent,
+          EffectController(duration: 0.15, alternate: true, repeatCount: 3),
+          opacityFrom: 0.0,
+          opacityTo: 0.5,
+        ),
+      );
     }
 
     _animComponent.animationTicker?.onComplete = () {

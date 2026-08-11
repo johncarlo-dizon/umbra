@@ -231,7 +231,7 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
         (other is BattleCompanionPet && !other.isFainted) ||
         (other is Player && !other.isDead && !petIsGuarding);
 
-    if (isValidTarget && !isDead) {
+    if (isValidTarget && !isDead && !isStunned) {
       _combatTarget ??= other;
       if (other != _combatTarget) return;
       if (_attackAnimCooldown <= 0) {
@@ -259,5 +259,27 @@ abstract class EnemyBase extends PositionComponent with CollisionCallbacks {
       Rect.fromLTWH(0, -8, barWidth * (hp / maxHp), barHeight),
       Paint()..color = Colors.redAccent,
     );
+
+    if (isStunned) {
+      _renderStunLabel(canvas, barWidth);
+    }
+  }
+
+  void _renderStunLabel(Canvas canvas, double barWidth) {
+    final label = 'STUN ${_stunnedUntil.toStringAsFixed(1)}s';
+    final painter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: const TextStyle(
+          color: Colors.lightBlueAccent,
+          fontSize: 8,
+          fontWeight: FontWeight.bold,
+          shadows: [Shadow(color: Colors.black, blurRadius: 2)],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final dx = (barWidth - painter.width) / 2;
+    painter.paint(canvas, Offset(dx, -20));
   }
 }
