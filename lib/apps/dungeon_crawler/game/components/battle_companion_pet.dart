@@ -13,6 +13,7 @@ import 'wall_block.dart';
 import 'locked_door.dart';
 import '../../audio/dungeon_audio.dart';
 import 'floating_label.dart';
+import 'package:flame/particles.dart';
 
 enum PetFacing { down, up, right, left }
 
@@ -277,7 +278,6 @@ class BattleCompanionPet extends PositionComponent
       DamageNumber(
         position: target.position.clone() + Vector2(0, -20),
         amount: damage,
-        // gold instead of green when it's a crit, so it reads at a glance
         color: isDoubleHit ? Colors.amberAccent : Colors.lightGreenAccent,
       ),
     );
@@ -289,6 +289,7 @@ class BattleCompanionPet extends PositionComponent
           color: Colors.amberAccent,
         ),
       );
+      _playCritBurst(target.position.clone());
     }
 
     final didLifesteal = _rng.nextDouble() < definition.lifestealChance;
@@ -302,6 +303,7 @@ class BattleCompanionPet extends PositionComponent
           color: Colors.pinkAccent, // heal number shown on the pet itself
         ),
       );
+      _playLifestealBurst();
     }
 
     final didStun = _rng.nextDouble() < definition.stunChance;
@@ -333,6 +335,117 @@ class BattleCompanionPet extends PositionComponent
               ? PetFacing.right
               : _facing];
     };
+  }
+
+  void _playLifestealBurst() {
+    gameRef.addComponentToWorld(
+      ParticleSystemComponent(
+        position: position.clone(),
+        particle: Particle.generate(
+          count: 5,
+          lifespan: 0.6,
+          generator: (i) {
+            final angle = (i / 5) * 2 * math.pi + _rng.nextDouble() * 0.6;
+            return AcceleratedParticle(
+              speed: Vector2(math.cos(angle), math.sin(angle)) * -18,
+              acceleration: Vector2(0, -55), // hearts drift upward as they fade
+              child: ComputedParticle(
+                renderer: (canvas, particle) {
+                  final progress = particle.progress;
+                  final alpha = (1 - progress).clamp(0.0, 1.0);
+                  final scale = 1.0 - progress * 0.25;
+                  final paint = Paint()
+                    ..color = Colors.pinkAccent.withValues(alpha: alpha)
+                    ..style = PaintingStyle.fill;
+                  canvas.save();
+                  canvas.rotate((_rng.nextDouble() - 0.5) * 0.3);
+                  _drawHeart(canvas, paint, scale);
+                  canvas.restore();
+                },
+              ),
+            );
+          },
+        ),
+      ),
+    );
+    _animComponent.add(
+      ColorEffect(
+        Colors.pinkAccent,
+        EffectController(duration: 0.12, alternate: true, repeatCount: 2),
+        opacityFrom: 0.0,
+        opacityTo: 0.6,
+      ),
+    );
+  }
+
+  void _drawHeart(Canvas canvas, Paint paint, double scale) {
+    final s = scale * 3.0;
+    final path = Path()
+      ..moveTo(0, 1.2 * s)
+      ..cubicTo(-2.4 * s, -1.0 * s, -1.2 * s, -2.6 * s, 0, -1.0 * s)
+      ..cubicTo(1.2 * s, -2.6 * s, 2.4 * s, -1.0 * s, 0, 1.2 * s)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  void _playCritBurst(Vector2 at) {
+    gameRef.addComponentToWorld(
+      ParticleSystemComponent(
+        position: at,
+        particle: Particle.generate(
+          count: 10,
+          lifespan: 0.3,
+          generator: (i) {
+            final angle = (i / 10) * 2 * math.pi + _rng.nextDouble() * 0.3;
+            final dir = Vector2(math.cos(angle), math.sin(angle));
+            final length = 6.0 + _rng.nextDouble() * 4.0;
+            return AcceleratedParticle(
+              speed: dir * 140,
+              acceleration: dir * -260, // sharp burst that decelerates fast
+              child: ComputedParticle(
+                renderer: (canvas, particle) {
+                  final progress = particle.progress;
+                  final alpha = (1 - progress).clamp(0.0, 1.0);
+                  final paint = Paint()
+                    ..color = Colors.redAccent.withValues(alpha: alpha)
+                    ..style = PaintingStyle.stroke
+                    ..strokeWidth = 1.8
+                    ..strokeCap = StrokeCap.round;
+                  canvas.save();
+                  canvas.rotate(angle);
+                  canvas.drawLine(
+                    Offset.zero,
+                    Offset(length * (1 - progress * 0.4), 0),
+                    paint,
+                  );
+                  canvas.restore();
+                },
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    // a quick expanding ring at the impact point sells the "crit" weight
+    gameRef.addComponentToWorld(
+      ParticleSystemComponent(
+        position: at,
+        particle: ComputedParticle(
+          lifespan: 0.22,
+          renderer: (canvas, particle) {
+            final progress = particle.progress;
+            final radius = 4 + progress * 10;
+            final alpha = (1 - progress).clamp(0.0, 1.0);
+            final paint = Paint()
+              ..color = Colors.redAccent.withValues(alpha: alpha * 0.8)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2;
+            canvas.drawCircle(Offset.zero, radius, paint);
+          },
+        ),
+      ),
+    );
   }
 
   @override

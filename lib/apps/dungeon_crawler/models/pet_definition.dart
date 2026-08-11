@@ -95,7 +95,7 @@ class PetDefinition {
       maxHp: 145,
       damage: 11,
       cooldown: 1.4,
-      doubleAttackChance: 0.10,
+      doubleAttackChance: 0.90,
       stunChance: 0.10,
       stunDuration: 1.0,
       attackFrameCounts: {'attack': 5},
