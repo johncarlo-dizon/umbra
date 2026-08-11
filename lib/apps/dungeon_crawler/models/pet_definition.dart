@@ -71,6 +71,7 @@ class PetDefinition {
       attackFrameCounts: {'attack': 5},
     ),
     PetDefinition(
+      // cat sound effect
       id: 'frost',
       name: 'Frost',
       spriteSheet: 'frost.png',
@@ -100,6 +101,7 @@ class PetDefinition {
       attackFrameCounts: {'attack': 5},
     ),
     PetDefinition(
+      // cat sound effect
       id: 'void',
       name: 'Void',
       spriteSheet: 'void.png',

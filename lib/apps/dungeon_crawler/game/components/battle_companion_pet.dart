@@ -4,7 +4,6 @@ import 'package:flame/effects.dart';
 import 'package:flame/sprite.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
-
 import '../../models/pet_definition.dart';
 import '../dungeon_game.dart';
 import 'damage_number.dart';
@@ -12,6 +11,7 @@ import 'enemy_base.dart';
 import 'dart:math' as math;
 import 'wall_block.dart';
 import 'locked_door.dart';
+import '../../audio/dungeon_audio.dart';
 
 enum PetFacing { down, up, right, left }
 
@@ -156,6 +156,7 @@ class BattleCompanionPet extends PositionComponent
     if (isFainted) {
       _animComponent.animation = _faintedAnimation;
       _faintTimer = faintDisplayDuration;
+      DungeonAudio.petDie(definition.id);
     }
   }
 
@@ -264,7 +265,7 @@ class BattleCompanionPet extends PositionComponent
     _isFlipped = target.position.x < position.x;
     _animComponent.scale.x = _isFlipped ? -1 : 1;
     _animComponent.animation = _attackAnimation;
-
+    DungeonAudio.petAttack(definition.id);
     var damage = definition.damage;
     final isDoubleHit = _rng.nextDouble() < definition.doubleAttackChance;
     if (isDoubleHit) damage *= 2;

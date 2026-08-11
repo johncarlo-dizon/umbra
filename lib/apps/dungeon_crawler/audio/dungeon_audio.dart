@@ -28,7 +28,24 @@ class DungeonAudio {
     'potion_drink.mp3',
     'coin_collect.mp3',
     'opendoor.mp3',
+    'bird_attack.mp3',
+    'bird_die.mp3',
+    'cat_attack.mp3',
+    'cat_die.mp3',
   ];
+
+  static const _catSoundPets = {'frost', 'void'};
+
+  static void petAttack(String petId) => _playSfx(
+    _catSoundPets.contains(petId) ? 'cat_attack.mp3' : 'bird_attack.mp3',
+    volume: 0.7,
+    minInterval: 0.2,
+  );
+
+  static void petDie(String petId) => _playSfx(
+    _catSoundPets.contains(petId) ? 'cat_die.mp3' : 'bird_die.mp3',
+    volume: 0.8,
+  );
 
   static Future<void> preload() => FlameAudio.audioCache.loadAll(_files);
 
