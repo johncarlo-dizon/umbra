@@ -13,7 +13,7 @@ class PatrolEnemy extends EnemyBase with HasGameRef<DungeonGame> {
   PatrolEnemy({required super.position, required this.waypoints})
     : super(
         size: Vector2.all(26),
-        maxHp: 40,
+        maxHp: 80,
         contactDamage: 10,
         spriteFile: 'boylisensya.png',
         cellSize: Vector2(84, 742 / 9),

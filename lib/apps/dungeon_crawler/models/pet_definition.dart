@@ -40,7 +40,7 @@ class PetDefinition {
       cellWidth: 95,
       cellHeight: 86,
       maxHp: 80,
-      damage: 6,
+      damage: 7,
       cooldown: 2.0,
       attackFrameCounts: {'attack': 5},
     ),
@@ -54,7 +54,7 @@ class PetDefinition {
       maxHp: 90,
       damage: 8,
       cooldown: 1.8,
-      lifestealChance: 0.12, // fire/rebirth theme fits lifesteal
+      lifestealChance: 0.40, // fire/rebirth theme fits lifesteal
       attackFrameCounts: {'attack': 5},
     ),
     PetDefinition(
@@ -67,7 +67,7 @@ class PetDefinition {
       maxHp: 100,
       damage: 9,
       cooldown: 1.6,
-      doubleAttackChance: 0.15, // fast, fierce — double-strike theme
+      doubleAttackChance: 0.30, // fast, fierce — double-strike theme
       attackFrameCounts: {'attack': 5},
     ),
     PetDefinition(
@@ -81,7 +81,7 @@ class PetDefinition {
       maxHp: 120,
       damage: 9,
       cooldown: 1.6,
-      stunChance: 0.15,
+      stunChance: 0.40,
       stunDuration: 1.0, // ice/freeze theme fits stun
       attackFrameCounts: {'attack': 3},
     ),
@@ -92,10 +92,10 @@ class PetDefinition {
       cost: 200,
       cellWidth: 132,
       cellHeight: 86,
-      maxHp: 145,
+      maxHp: 130,
       damage: 11,
       cooldown: 1.4,
-      doubleAttackChance: 0.90,
+      doubleAttackChance: 0.40,
       stunChance: 0.10,
       stunDuration: 1.0,
       attackFrameCounts: {'attack': 5},
@@ -108,13 +108,13 @@ class PetDefinition {
       cost: 250,
       cellWidth: 104,
       cellHeight: 78,
-      maxHp: 200,
-      damage: 13,
+      maxHp: 150,
+      damage: 15,
       cooldown: 1.3,
-      doubleAttackChance: 0.90,
-      lifestealChance: 0.70,
-      stunChance: 0.70,
-      stunDuration: 1.0,
+      doubleAttackChance: 0.20,
+      lifestealChance: 0.40,
+      stunChance: 0.10,
+      stunDuration: 1.5,
       attackFrameCounts: {'attack': 4},
     ),
   ];
