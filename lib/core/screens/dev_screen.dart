@@ -142,6 +142,9 @@ class _AboutUmbraCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
+          const _LimitationItem(
+            'Built and maintained solo — some bugs may not be caught yet',
+          ),
           const _LimitationItem('Occasional slow loading'),
           const _LimitationItem('Rare errors during heavy use'),
         ],
