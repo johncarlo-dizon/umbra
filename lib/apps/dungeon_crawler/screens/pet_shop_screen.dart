@@ -31,121 +31,60 @@ class _PetShopScreenState extends State<PetShopScreen> {
   Widget build(BuildContext context) {
     return Theme(
       data: DungeonTheme.theme,
-      child: Builder(
-        builder: (context) {
-          final theme = Theme.of(context);
-          return Scaffold(
-            body: FutureBuilder<PetProgress>(
-              future: _future,
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final progress = snapshot.data!;
-                return Align(
-                  alignment: Alignment.topCenter,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 480),
-                    child: CustomScrollView(
-                      slivers: [
-                        SliverAppBar(
-                          pinned: true,
-                          floating: true,
-                          expandedHeight: 168,
-                          title: const Text('Pet Shop'),
-                          actions: [
-                            Padding(
-                              padding: const EdgeInsets.only(right: 12),
-                              child: Center(
-                                child: _GemBalance(gems: progress.gems),
-                              ),
-                            ),
-                          ],
-                          flexibleSpace: FlexibleSpaceBar(
-                            centerTitle: false,
-                            titlePadding: EdgeInsets.zero,
-                            background: Container(
-                              padding: const EdgeInsets.fromLTRB(
-                                24,
-                                56,
-                                24,
-                                16,
-                              ),
-                              alignment: Alignment.bottomLeft,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    theme.colorScheme.primary.withValues(
-                                      alpha: 0.12,
-                                    ),
-                                    Colors.transparent,
-                                  ],
-                                ),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Icon(
-                                    Icons.pets,
-                                    size: 48,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      'Spend gems on companions\nto fight by your side.',
-                                      style: theme.textTheme.bodyMedium,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                          sliver: SliverList.builder(
-                            itemCount: PetDefinition.all.length,
-                            itemBuilder: (context, i) {
-                              final pet = PetDefinition.all[i];
-                              final owned = progress.unlockedPetIds.contains(
-                                pet.id,
-                              );
-                              final equipped = progress.equippedPetId == pet.id;
-                              final canAfford = progress.gems >= pet.cost;
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: _PetRow(
-                                  pet: pet,
-                                  owned: owned,
-                                  equipped: equipped,
-                                  canAfford: canAfford,
-                                  onEquip: () async {
-                                    await PetProgressService.equipPet(pet.id);
-                                    _reload();
-                                  },
-                                  onPurchase: () async {
-                                    final ok =
-                                        await PetProgressService.purchasePet(
-                                          pet.id,
-                                        );
-                                    if (ok) _reload();
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Pet Shop')),
+        body: FutureBuilder<PetProgress>(
+          future: _future,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final progress = snapshot.data!;
+            return Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  children: [
+                    Text(
+                      'Spend gems on companions to fight by your side.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                );
-              },
-            ),
-          );
-        },
+                    const SizedBox(height: 12),
+                    Center(child: _GemBalance(gems: progress.gems)),
+                    const SizedBox(height: 20),
+                    ...PetDefinition.all.map((pet) {
+                      final owned = progress.unlockedPetIds.contains(pet.id);
+                      final equipped = progress.equippedPetId == pet.id;
+                      final canAfford = progress.gems >= pet.cost;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _PetRow(
+                          pet: pet,
+                          owned: owned,
+                          equipped: equipped,
+                          canAfford: canAfford,
+                          onEquip: () async {
+                            await PetProgressService.equipPet(pet.id);
+                            _reload();
+                          },
+                          onPurchase: () async {
+                            final ok = await PetProgressService.purchasePet(
+                              pet.id,
+                            );
+                            if (ok) _reload();
+                          },
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -222,7 +161,29 @@ class _PetRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _PetSprite(pet: pet),
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    theme.colorScheme.primary.withValues(alpha: 0.85),
+                    DungeonTheme.dungeonFloor,
+                  ],
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                pet.name[0],
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onPrimary,
+                ),
+              ),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -392,50 +353,6 @@ class _ActionSlot extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-/// Shows the pet's actual sprite instead of a letter avatar — crops the
-/// first frame of row 0 (the down-facing walk pose, same row
-/// BattleCompanionPet uses for idle/default facing) out of the same
-/// sheet the game itself uses. Image.asset has no built-in crop, so this
-/// renders the full sheet at native size and clips a cellWidth x
-/// cellHeight window over the top-left frame.
-class _PetSprite extends StatelessWidget {
-  const _PetSprite({required this.pet});
-
-  final PetDefinition pet;
-  static const double size = 44;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipOval(
-      child: Container(
-        width: size,
-        height: size,
-        color: DungeonTheme.dungeonWall,
-        alignment: Alignment.center,
-        child: FittedBox(
-          fit: BoxFit.contain,
-          child: SizedBox(
-            width: pet.cellWidth,
-            height: pet.cellHeight,
-            child: ClipRect(
-              child: OverflowBox(
-                maxWidth: double.infinity,
-                maxHeight: double.infinity,
-                alignment: Alignment.topLeft,
-                child: Image.asset(
-                  'assets/images/${pet.spriteSheet}',
-                  fit: BoxFit.none,
-                  alignment: Alignment.topLeft,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
