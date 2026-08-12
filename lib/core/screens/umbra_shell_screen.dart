@@ -94,6 +94,13 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
       route: '/quotes',
       color: Colors.deepPurple,
     ),
+    _AppEntry(
+      iconAsset: 'assets/icon/notepad.png',
+      name: 'Notes',
+      description: 'Quick notes with folders, pinning, and search.',
+      route: '/notes',
+      color: Color.fromARGB(10, 243, 196, 42),
+    ),
   ];
 
   @override
