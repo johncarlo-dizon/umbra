@@ -115,22 +115,25 @@ class _PetShopScreenState extends State<PetShopScreen> {
                               );
                               final equipped = progress.equippedPetId == pet.id;
                               final canAfford = progress.gems >= pet.cost;
-                              return _PetCard(
-                                pet: pet,
-                                owned: owned,
-                                equipped: equipped,
-                                canAfford: canAfford,
-                                onEquip: () async {
-                                  await PetProgressService.equipPet(pet.id);
-                                  _reload();
-                                },
-                                onPurchase: () async {
-                                  final ok =
-                                      await PetProgressService.purchasePet(
-                                        pet.id,
-                                      );
-                                  if (ok) _reload();
-                                },
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: _PetRow(
+                                  pet: pet,
+                                  owned: owned,
+                                  equipped: equipped,
+                                  canAfford: canAfford,
+                                  onEquip: () async {
+                                    await PetProgressService.equipPet(pet.id);
+                                    _reload();
+                                  },
+                                  onPurchase: () async {
+                                    final ok =
+                                        await PetProgressService.purchasePet(
+                                          pet.id,
+                                        );
+                                    if (ok) _reload();
+                                  },
+                                ),
                               );
                             },
                           ),
@@ -180,8 +183,12 @@ class _GemBalance extends StatelessWidget {
   }
 }
 
-class _PetCard extends StatelessWidget {
-  const _PetCard({
+/// One flat row per pet -- same skeleton as the leaderboard's rank rows:
+/// avatar, name + a single stat line, one action on the right. Replaces
+/// the old elevated Card + multi-line chip Wrap, but keeps every color
+/// the original screen already used.
+class _PetRow extends StatelessWidget {
+  const _PetRow({
     required this.pet,
     required this.owned,
     required this.equipped,
@@ -201,7 +208,7 @@ class _PetCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      margin: EdgeInsets.zero,
       elevation: equipped ? 3 : 1,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
@@ -211,195 +218,223 @@ class _PetCard extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        theme.colorScheme.primary.withValues(alpha: 0.85),
-                        DungeonTheme.dungeonFloor,
-                      ],
-                    ),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    pet.name[0],
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onPrimary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            _PetSprite(pet: pet),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              pet.name,
-                              style: theme.textTheme.titleMedium,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                      Expanded(
+                        child: Text(
+                          pet.name,
+                          style: theme.textTheme.titleMedium,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (equipped)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 6),
+                          child: Icon(
+                            Icons.check_circle,
+                            size: 16,
+                            color: DungeonTheme.hpOrange,
                           ),
-                          if (equipped)
-                            const Padding(
-                              padding: EdgeInsets.only(left: 8),
-                              child: Chip(
-                                label: Text('Equipped'),
-                                visualDensity: VisualDensity.compact,
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: _statChips(pet),
-                      ),
+                        ),
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 6),
+                  _StatLine(pet: pet),
+                ],
+              ),
             ),
-            const SizedBox(height: 12),
-            Align(alignment: Alignment.centerRight, child: _actionButton()),
+            const SizedBox(width: 10),
+            _ActionSlot(
+              pet: pet,
+              owned: owned,
+              equipped: equipped,
+              canAfford: canAfford,
+              onEquip: onEquip,
+              onPurchase: onPurchase,
+            ),
           ],
         ),
       ),
     );
   }
-
-  Widget _actionButton() {
-    if (owned && !equipped) {
-      return OutlinedButton.icon(
-        onPressed: onEquip,
-        icon: const Icon(Icons.check_circle_outline, size: 18),
-        label: const Text('Equip'),
-      );
-    }
-    if (!owned) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FilledButton.icon(
-            onPressed: canAfford ? onPurchase : null,
-            icon: const Icon(Icons.diamond, size: 18),
-            label: Text('${pet.cost} gems'),
-          ),
-          if (!canAfford)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                'Not enough gems',
-                style: TextStyle(fontSize: 11, color: DungeonTheme.hazardRed),
-              ),
-            ),
-        ],
-      );
-    }
-    return const SizedBox.shrink();
-  }
-
-  List<Widget> _statChips(PetDefinition p) {
-    final chips = <Widget>[
-      _StatChip(
-        icon: Icons.favorite,
-        color: DungeonTheme.hpOrange,
-        label: '${p.maxHp} HP',
-      ),
-      _StatChip(
-        icon: Icons.bolt,
-        color: DungeonTheme.hazardRed,
-        label: '${p.damage} dmg',
-      ),
-      _StatChip(
-        icon: Icons.timer,
-        color: DungeonTheme.potionGreen,
-        label: '${p.cooldown}s cd',
-      ),
-    ];
-    if (p.doubleAttackChance > 0) {
-      chips.add(
-        _StatChip(
-          icon: Icons.flash_on,
-          color: DungeonTheme.coinGold,
-          label: '${(p.doubleAttackChance * 100).round()}% double',
-        ),
-      );
-    }
-    if (p.stunChance > 0) {
-      chips.add(
-        _StatChip(
-          icon: Icons.blur_circular,
-          color: DungeonTheme.dungeonFloor,
-          label: '${(p.stunChance * 100).round()}% stun',
-        ),
-      );
-    }
-    if (p.lifestealChance > 0) {
-      chips.add(
-        _StatChip(
-          icon: Icons.opacity,
-          color: DungeonTheme.hazardRed,
-          label: '${(p.lifestealChance * 100).round()}% lifesteal',
-        ),
-      );
-    }
-    return chips;
-  }
 }
 
-class _StatChip extends StatelessWidget {
-  const _StatChip({
-    required this.icon,
-    required this.color,
-    required this.label,
-  });
+/// All stats on a single line instead of a wrapping chip cloud -- each
+/// stat keeps the exact icon/color pairing the original chips used.
+class _StatLine extends StatelessWidget {
+  const _StatLine({required this.pet});
 
-  final IconData icon;
-  final Color color;
-  final String label;
+  final PetDefinition pet;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
+    final special = _specialStat(pet);
+    return Row(
+      children: [
+        _statItem(Icons.favorite, DungeonTheme.hpOrange, '${pet.maxHp}'),
+        const SizedBox(width: 8),
+        _statItem(Icons.bolt, DungeonTheme.hazardRed, '${pet.damage}'),
+        const SizedBox(width: 8),
+        _statItem(Icons.timer, DungeonTheme.potionGreen, '${pet.cooldown}s'),
+        if (special != null) ...[
+          const SizedBox(width: 8),
+          Flexible(
+            child: _statItem(special.icon, special.color, special.label),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _statItem(IconData icon, Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: color),
+        const SizedBox(width: 3),
+        Flexible(
+          child: Text(
             label,
             style: TextStyle(
               fontSize: 11,
               color: color,
               fontWeight: FontWeight.w600,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
-        ],
+        ),
+      ],
+    );
+  }
+
+  /// Only the strongest special stat is shown inline to keep the row to
+  /// one line, using the same icon/color pairing the original chips had.
+  ({IconData icon, Color color, String label})? _specialStat(PetDefinition p) {
+    if (p.doubleAttackChance > 0) {
+      return (
+        icon: Icons.flash_on,
+        color: DungeonTheme.coinGold,
+        label: '${(p.doubleAttackChance * 100).round()}% double',
+      );
+    }
+    if (p.stunChance > 0) {
+      return (
+        icon: Icons.blur_circular,
+        color: DungeonTheme.dungeonFloor,
+        label: '${(p.stunChance * 100).round()}% stun',
+      );
+    }
+    if (p.lifestealChance > 0) {
+      return (
+        icon: Icons.opacity,
+        color: DungeonTheme.hazardRed,
+        label: '${(p.lifestealChance * 100).round()}% lifesteal',
+      );
+    }
+    return null;
+  }
+}
+
+class _ActionSlot extends StatelessWidget {
+  const _ActionSlot({
+    required this.pet,
+    required this.owned,
+    required this.equipped,
+    required this.canAfford,
+    required this.onEquip,
+    required this.onPurchase,
+  });
+
+  final PetDefinition pet;
+  final bool owned;
+  final bool equipped;
+  final bool canAfford;
+  final VoidCallback onEquip;
+  final VoidCallback onPurchase;
+
+  @override
+  Widget build(BuildContext context) {
+    if (equipped) {
+      return const SizedBox.shrink();
+    }
+    if (owned) {
+      return OutlinedButton.icon(
+        onPressed: onEquip,
+        icon: const Icon(Icons.check_circle_outline, size: 18),
+        label: const Text('Equip'),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FilledButton.icon(
+          onPressed: canAfford ? onPurchase : null,
+          icon: const Icon(Icons.diamond, size: 18),
+          label: Text('${pet.cost}'),
+        ),
+        if (!canAfford)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Not enough',
+              style: TextStyle(fontSize: 10, color: DungeonTheme.hazardRed),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Shows the pet's actual sprite instead of a letter avatar — crops the
+/// first frame of row 0 (the down-facing walk pose, same row
+/// BattleCompanionPet uses for idle/default facing) out of the same
+/// sheet the game itself uses. Image.asset has no built-in crop, so this
+/// renders the full sheet at native size and clips a cellWidth x
+/// cellHeight window over the top-left frame.
+class _PetSprite extends StatelessWidget {
+  const _PetSprite({required this.pet, this.size = 44});
+
+  final PetDefinition pet;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipOval(
+      child: Container(
+        width: size,
+        height: size,
+        color: DungeonTheme.dungeonWall,
+        alignment: Alignment.center,
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: SizedBox(
+            width: pet.cellWidth,
+            height: pet.cellHeight,
+            child: ClipRect(
+              child: OverflowBox(
+                maxWidth: double.infinity,
+                maxHeight: double.infinity,
+                alignment: Alignment.topLeft,
+                child: Image.asset(
+                  'assets/images/${pet.spriteSheet}',
+                  fit: BoxFit.none,
+                  alignment: Alignment.topLeft,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

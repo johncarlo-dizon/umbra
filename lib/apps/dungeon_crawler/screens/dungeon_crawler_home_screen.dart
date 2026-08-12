@@ -58,9 +58,9 @@ class _DungeonCrawlerHomeScreenState extends State<DungeonCrawlerHomeScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.castle, size: 72, color: theme.colorScheme.primary),
+                Image.asset('assets/icon/dungeon.png', height: 72),
                 const SizedBox(height: 12),
-                Text('Dungeon Crawler', style: theme.textTheme.headlineMedium),
+                Text('Road Rage Runner', style: theme.textTheme.headlineMedium),
                 const SizedBox(height: 4),
                 Text(
                   'Fight through an endless dungeon. How deep can you go?',

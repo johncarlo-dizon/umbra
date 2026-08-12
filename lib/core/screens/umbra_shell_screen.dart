@@ -82,7 +82,7 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
     ),
     _AppEntry(
       iconAsset: 'assets/icon/dungeon.png',
-      name: 'Dungeon Crawler',
+      name: 'Road Rage Runner',
       description: 'Fight through a dungeon, collect keys, find the exit.',
       route: '/dungeon-crawler',
       color: AppColors.orange,
