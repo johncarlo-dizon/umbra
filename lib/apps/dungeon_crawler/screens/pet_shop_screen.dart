@@ -403,10 +403,10 @@ class _ActionSlot extends StatelessWidget {
 /// renders the full sheet at native size and clips a cellWidth x
 /// cellHeight window over the top-left frame.
 class _PetSprite extends StatelessWidget {
-  const _PetSprite({required this.pet, this.size = 44});
+  const _PetSprite({required this.pet});
 
   final PetDefinition pet;
-  final double size;
+  static const double size = 44;
 
   @override
   Widget build(BuildContext context) {

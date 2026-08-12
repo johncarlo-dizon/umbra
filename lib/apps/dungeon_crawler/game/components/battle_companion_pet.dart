@@ -30,7 +30,8 @@ class BattleCompanionPet extends PositionComponent
   static const double followDistance = 28;
   static const double followSpeed = 160;
   static const double detectionRadius = 90;
-
+  static const double leashDistance = 128;
+  static const double returnSpeed = 260;
   double _attackCooldown = 0;
   bool _isAttacking = false;
   PetFacing _facing = PetFacing.down;
@@ -191,6 +192,12 @@ class BattleCompanionPet extends PositionComponent
 
     if (_isAttacking) return;
 
+    final distanceFromPlayer = (player.position - position).length;
+    if (distanceFromPlayer > leashDistance) {
+      _followPlayer(player, dt, speed: returnSpeed);
+      return;
+    }
+
     final target = _findNearestEnemy();
     if (target != null) {
       final distance = (target.position - position).length;
@@ -232,11 +239,11 @@ class BattleCompanionPet extends PositionComponent
     return nearest;
   }
 
-  void _followPlayer(dynamic player, double dt) {
+  void _followPlayer(dynamic player, double dt, {double speed = followSpeed}) {
     final toPlayer = player.position - position;
     final distance = toPlayer.length;
     if (distance > followDistance) {
-      final velocity = toPlayer.normalized() * followSpeed;
+      final velocity = toPlayer.normalized() * speed;
       position.add(velocity * dt);
       _setFacingFromVelocity(velocity);
     }
