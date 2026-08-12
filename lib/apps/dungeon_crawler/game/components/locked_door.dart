@@ -31,18 +31,7 @@ class LockedDoor extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    if (_open) {
-      // Open: draw a slim threshold strip instead of a full solid block
-      final stripHeight = size.y * 0.12;
-      final stripRect = Rect.fromLTWH(
-        0,
-        size.y - stripHeight,
-        size.x,
-        stripHeight,
-      );
-      canvas.drawRect(stripRect, Paint()..color = const Color(0xFF604628));
-      return;
-    }
+    if (_open) return; // fully disappears once unlocked
 
     // Locked: full solid block, reads clearly as an obstacle
     final rect = Rect.fromLTWH(0, 0, size.x, size.y);
@@ -71,7 +60,7 @@ class LockedDoor extends PositionComponent
   ) {
     super.onCollisionStart(intersectionPoints, other);
     if (_open) return;
-    if (other is Player && gameRef.inventory.hasKey(requiresKey)) {
+    if (other is Player && gameRef.inventory.useKey(requiresKey)) {
       _openDoor();
     }
   }

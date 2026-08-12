@@ -28,6 +28,13 @@ class Inventory extends ChangeNotifier {
   int _gemsCollected = 0;
   int get gemsCollected => _gemsCollected;
   bool hasKey(String keyId) => _keys.any((k) => k.id == keyId);
+  bool useKey(String keyId) {
+    final index = _keys.indexWhere((k) => k.id == keyId);
+    if (index == -1) return false;
+    _keys.removeAt(index);
+    notifyListeners();
+    return true;
+  }
 
   void addItem(String id, ItemKind kind) {
     switch (kind) {
