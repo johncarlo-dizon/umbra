@@ -266,12 +266,6 @@ class _QuoteAppHomeScreenState extends State<QuoteAppHomeScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        Text(
-          'Quotes powered by the QuoteSlate API',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
-        ),
       ],
     );
   }
