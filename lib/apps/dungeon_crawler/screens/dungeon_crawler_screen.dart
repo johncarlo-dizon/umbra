@@ -18,6 +18,13 @@ import '../widgets/minimap_overlay.dart';
 import '../services/pet_progress_service.dart';
 import '../models/pet_definition.dart';
 
+/// Manual override for which control scheme is shown, layered on top of
+/// the automatic width-based guess (`_isTouchPlatform`). Exists because
+/// screen width alone can't distinguish "iPad with a keyboard attached"
+/// from "iPad held with just fingers" — both are wide viewports, but
+/// want opposite control schemes.
+enum ControlMode { auto, touch, keyboard }
+
 class DungeonCrawlerScreen extends StatefulWidget {
   const DungeonCrawlerScreen({super.key});
 
@@ -31,6 +38,7 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
   DungeonGame? _game;
   bool _blockedForGuest = false;
   bool _scoreSubmitted = false;
+  ControlMode _controlMode = ControlMode.auto;
 
   void _submitScoreOnce(DungeonGame game) {
     PetProgressService.addGemsEarned(_inventory.gemsCollected);
@@ -91,6 +99,48 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
     return MediaQuery.sizeOf(context).width < _touchControlsBreakpoint;
   }
 
+  /// Effective touch-vs-keyboard decision: an explicit user override wins
+  /// outright; otherwise falls back to the width-based auto-guess.
+  bool _effectiveIsTouch(BuildContext context) {
+    switch (_controlMode) {
+      case ControlMode.touch:
+        return true;
+      case ControlMode.keyboard:
+        return false;
+      case ControlMode.auto:
+        return _isTouchPlatform(context);
+    }
+  }
+
+  IconData _controlModeIcon() {
+    switch (_controlMode) {
+      case ControlMode.auto:
+        return Icons.auto_awesome;
+      case ControlMode.touch:
+        return Icons.gamepad;
+      case ControlMode.keyboard:
+        return Icons.keyboard;
+    }
+  }
+
+  String _controlModeLabel() {
+    switch (_controlMode) {
+      case ControlMode.auto:
+        return 'Auto';
+      case ControlMode.touch:
+        return 'Touch';
+      case ControlMode.keyboard:
+        return 'Keyboard';
+    }
+  }
+
+  void _cycleControlMode() {
+    setState(() {
+      _controlMode = ControlMode
+          .values[(_controlMode.index + 1) % ControlMode.values.length];
+    });
+  }
+
   @override
   void dispose() {
     _gameState.dispose();
@@ -113,6 +163,8 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
         body: Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
+
+    final showTouch = _effectiveIsTouch(context);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -155,8 +207,8 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
                     );
                   },
                 ),
-                if (_isTouchPlatform(context)) TouchControlsOverlay(game: game),
-                if (!_isTouchPlatform(context)) const _KeyboardHintOverlay(),
+                if (showTouch) TouchControlsOverlay(game: game),
+                if (!showTouch) const _KeyboardHintOverlay(),
                 Positioned(
                   top: 16,
                   left: 210,
@@ -164,6 +216,15 @@ class _DungeonCrawlerScreenState extends State<DungeonCrawlerScreen> {
                     icon: const Icon(Icons.close, color: Colors.white70),
                     tooltip: 'Exit dungeon',
                     onPressed: () => Navigator.of(context).maybePop(),
+                  ),
+                ),
+                Positioned(
+                  top: 16,
+                  left: 254,
+                  child: IconButton(
+                    icon: Icon(_controlModeIcon(), color: Colors.white70),
+                    tooltip: 'Controls: ${_controlModeLabel()} (tap to switch)',
+                    onPressed: _cycleControlMode,
                   ),
                 ),
               ],
