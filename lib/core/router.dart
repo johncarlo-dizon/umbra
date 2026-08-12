@@ -6,6 +6,7 @@ import '../apps/fitlog/fitlog_routes.dart';
 import '../apps/calculator/calculator_routes.dart';
 import '../apps/unit_converter/unit_converter_routes.dart';
 import 'package:umbra/apps/dungeon_crawler/dungeon_crawler_routes.dart';
+import '../apps/quoteapp/quoteapp_routes.dart';
 
 /// Lets screens detect when they've become visible again after
 /// popping back from a pushed screen — used by MangaHub's home
@@ -25,6 +26,7 @@ class AppRouter {
       ...calculatorRoutes,
       ...unitConverterRoutes,
       ...dungeonCrawlerRoutes,
+      ...quoteAppRoutes,
     ],
   );
 }

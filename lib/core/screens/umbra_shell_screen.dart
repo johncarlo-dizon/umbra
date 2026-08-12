@@ -87,6 +87,13 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
       route: '/dungeon-crawler',
       color: AppColors.orange,
     ),
+    _AppEntry(
+      iconAsset: 'assets/icon/left-quotes.png',
+      name: 'Quotely',
+      description: 'Random quotes, saved to your favorites',
+      route: '/quotes',
+      color: Colors.deepPurple,
+    ),
   ];
 
   @override
