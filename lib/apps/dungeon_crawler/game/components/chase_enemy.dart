@@ -9,8 +9,8 @@ class ChaseEnemy extends EnemyBase with HasGameRef<DungeonGame> {
   ChaseEnemy({required super.position, this.detectionRadius = 130})
     : super(
         size: Vector2.all(28),
-        maxHp: 100,
-        contactDamage: 15,
+        maxHp: 90,
+        contactDamage: 10,
         spriteFile: 'sige.png',
         cellSize: Vector2(84, 742 / 9),
       );
