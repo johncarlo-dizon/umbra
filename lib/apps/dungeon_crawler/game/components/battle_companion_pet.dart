@@ -34,6 +34,7 @@ class BattleCompanionPet extends PositionComponent
   static const double returnSpeed = 260;
   double _attackCooldown = 0;
   bool _isAttacking = false;
+  bool _isReturning = false;
   PetFacing _facing = PetFacing.down;
   bool _isFlipped = false;
   final Random _rng = Random();
@@ -94,6 +95,7 @@ class BattleCompanionPet extends PositionComponent
     _faintTimer = null;
     _isAttacking = false;
     _attackCooldown = 0;
+    _isReturning = false;
     _animComponent.animationTicker?.onComplete = null;
     final safeFacing = _facing == PetFacing.left ? PetFacing.right : _facing;
     _animComponent.animation = _walkAnimations[safeFacing];
@@ -193,7 +195,21 @@ class BattleCompanionPet extends PositionComponent
     if (_isAttacking) return;
 
     final distanceFromPlayer = (player.position - position).length;
+
+    // Once the pet commits to returning, it keeps going all the way back
+    // to normal follow range before it's allowed to re-engage an enemy —
+    // otherwise checking `> leashDistance` every frame flickers between
+    // "chase" and "return" right at the boundary, causing visible stutter.
+    if (_isReturning) {
+      _followPlayer(player, dt, speed: returnSpeed);
+      if (distanceFromPlayer <= followDistance) {
+        _isReturning = false;
+      }
+      return;
+    }
+
     if (distanceFromPlayer > leashDistance) {
+      _isReturning = true;
       _followPlayer(player, dt, speed: returnSpeed);
       return;
     }
