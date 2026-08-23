@@ -101,6 +101,13 @@ class _UmbraShellScreenState extends State<UmbraShellScreen> {
       route: '/notes',
       color: Color.fromARGB(10, 243, 196, 42),
     ),
+    _AppEntry(
+      iconAsset: 'assets/icon/social.png',
+      name: 'FriendBook',
+      description: 'Share posts, follow friends, like and comment.',
+      route: '/social',
+      color: Colors.deepPurple,
+    ),
   ];
 
   @override
