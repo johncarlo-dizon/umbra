@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../models/profile.dart';
 import '../services/social_service.dart';
 import '../theme/friendbook_colors.dart';
@@ -39,16 +40,17 @@ class ComposerEntryCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
-            InkWell(
-              onTap: onTap,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    CurrentUserIdBuilder(
-                      builder: (context, userId) {
-                        if (userId == null) return const SizedBox.shrink();
-                        return ValueListenableBuilder<Profile?>(
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  CurrentUserIdBuilder(
+                    builder: (context, userId) {
+                      if (userId == null) return const SizedBox.shrink();
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => context.push('/social/profile/$userId'),
+                        child: ValueListenableBuilder<Profile?>(
                           valueListenable: SocialService.myProfileNotifier,
                           builder: (context, profile, _) => SocialAvatar(
                             avatarPath: profile?.avatarPath,
@@ -56,11 +58,15 @@ class ComposerEntryCard extends StatelessWidget {
                             displayName: profile?.displayName ?? userId,
                             radius: 18,
                           ),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: onTap,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
@@ -76,24 +82,27 @@ class ComposerEntryCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    FilledButton(
-                      onPressed: onTap,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: kFriendBookBlue,
-                        foregroundColor: kFriendBookOnBlue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 10,
-                        ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Opens the same composer as the text field — this
+                  // isn't a real submit action at this stage (there's no
+                  // text yet), just another entry point into composing.
+                  FilledButton(
+                    onPressed: onTap,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: kFriendBookBlue,
+                      foregroundColor: kFriendBookOnBlue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Text('Post'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 10,
+                      ),
                     ),
-                  ],
-                ),
+                    child: const Text('Post'),
+                  ),
+                ],
               ),
             ),
             Divider(height: 1, color: colorScheme.outlineVariant),

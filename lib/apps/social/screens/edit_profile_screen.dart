@@ -183,9 +183,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Positioned(
                     bottom: 0,
                     right: 0,
-                    child: IconButton.filled(
-                      onPressed: _pickAvatar,
-                      icon: const Icon(Icons.camera_alt, size: 18),
+                    child: GestureDetector(
+                      onTap: _pickAvatar,
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          border: Border.all(
+                            color: colorScheme.surface,
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.camera_alt,
+                          size: 16,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
                     ),
                   ),
                 ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/supabase_client.dart';
 import '../models/post.dart';
@@ -8,6 +9,7 @@ import '../services/social_service.dart';
 import '../utils/format_count.dart';
 import '../widgets/social_avatar.dart';
 import '../widgets/social_top_bar.dart';
+import '../widgets/post_card.dart';
 
 enum _LoadState { loading, loaded, error }
 
@@ -44,7 +46,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _stats = stats;
         _profile = profile;
-        _posts = posts;
+        // Every post here is authored by the same profile we just loaded,
+        // so stamp it in directly rather than a second batch profile
+        // fetch — keeps the cards identical to how they render in Feed.
+        _posts = posts
+            .map(
+              (p) => p.copyWith(
+                authorDisplayName: profile.displayName,
+                authorAvatarPath: profile.avatarPath,
+              ),
+            )
+            .toList();
         _state = _LoadState.loaded;
       });
     } on SocialException catch (e) {
@@ -53,6 +65,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _state = _LoadState.error;
       });
     }
+  }
+
+  Future<void> _toggleLike(Post post) async {
+    final wasLiked = post.likedByMe;
+    setState(() {
+      final idx = _posts.indexWhere((p) => p.id == post.id);
+      _posts[idx] = post.copyWith(
+        likedByMe: !wasLiked,
+        likeCount: wasLiked ? post.likeCount - 1 : post.likeCount + 1,
+      );
+    });
+    try {
+      await SocialService.toggleLike(post.id, wasLiked);
+    } on SocialException {
+      setState(() {
+        final idx = _posts.indexWhere((p) => p.id == post.id);
+        _posts[idx] = post;
+      });
+    }
+  }
+
+  void _sharePost(Post post) {
+    Clipboard.setData(ClipboardData(text: '/social/post/${post.id}'));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Link copied')));
   }
 
   Future<void> _toggleFollow() async {
@@ -213,16 +251,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Center(child: Text('No posts yet.')),
               )
             else
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _posts.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 6,
-                  mainAxisSpacing: 6,
+              ..._posts.map(
+                (post) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: PostCard(
+                    post: post,
+                    onLike: _toggleLike,
+                    onShare: _sharePost,
+                  ),
                 ),
-                itemBuilder: (context, i) => _PostGridTile(post: _posts[i]),
               ),
           ],
         );
@@ -255,46 +292,6 @@ class _StatCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _PostGridTile extends StatelessWidget {
-  final Post post;
-  const _PostGridTile({required this.post});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: () => context.push('/social/post/${post.id}'),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: post.imagePaths.isNotEmpty
-            ? Image.network(
-                SocialService.imageUrl(post.imagePaths.first),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    _textTile(context, colorScheme),
-              )
-            : _textTile(context, colorScheme),
-      ),
-    );
-  }
-
-  Widget _textTile(BuildContext context, ColorScheme colorScheme) {
-    return Container(
-      color: colorScheme.surfaceContainerHighest,
-      padding: const EdgeInsets.all(6),
-      alignment: Alignment.center,
-      child: Text(
-        post.body,
-        maxLines: 4,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.labelSmall,
       ),
     );
   }
