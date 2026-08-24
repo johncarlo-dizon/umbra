@@ -8,6 +8,7 @@ import '../widgets/composer_entry_card.dart';
 import '../widgets/sign_in_required_screen.dart';
 import '../widgets/post_card.dart';
 import '../../../core/supabase_client.dart';
+import 'create_post_screen.dart';
 
 enum _FeedState { loading, loaded, error, offlineCached, empty }
 
@@ -79,7 +80,11 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
       );
     });
     try {
-      await SocialService.toggleLike(post.id, wasLiked);
+      await SocialService.toggleLike(
+        post.id,
+        wasLiked,
+        postOwnerId: post.userId,
+      );
     } on SocialException {
       setState(() {
         final idx = _posts.indexWhere((p) => p.id == post.id);

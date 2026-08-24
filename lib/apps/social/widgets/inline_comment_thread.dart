@@ -18,11 +18,13 @@ enum _LoadState { loading, loaded, error }
 /// the bottom of the whole screen.
 class InlineCommentThread extends StatefulWidget {
   final String postId;
+  final String postOwnerId;
   final ValueChanged<int>? onCommentCountChanged;
 
   const InlineCommentThread({
     super.key,
     required this.postId,
+    required this.postOwnerId,
     this.onCommentCountChanged,
   });
 
@@ -138,6 +140,7 @@ class _InlineCommentThreadState extends State<InlineCommentThread> {
         body.isEmpty ? ' ' : body,
         parentCommentId: _replyTarget?.id,
         imagePath: imagePath,
+        notifyUserId: _replyTarget?.userId ?? widget.postOwnerId,
       );
 
       final profiles = await SocialService.fetchProfilesByIds([comment.userId]);
@@ -183,7 +186,11 @@ class _InlineCommentThreadState extends State<InlineCommentThread> {
           .toList();
     });
     try {
-      await SocialService.toggleCommentLike(comment.id, wasLiked);
+      await SocialService.toggleCommentLike(
+        comment.id,
+        wasLiked,
+        commentOwnerId: comment.userId,
+      );
     } on SocialException {
       setState(() {
         _comments = _comments

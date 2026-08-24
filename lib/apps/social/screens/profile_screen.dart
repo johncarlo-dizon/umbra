@@ -77,7 +77,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     });
     try {
-      await SocialService.toggleLike(post.id, wasLiked);
+      await SocialService.toggleLike(
+        post.id,
+        wasLiked,
+        postOwnerId: post.userId,
+      );
     } on SocialException {
       setState(() {
         final idx = _posts.indexWhere((p) => p.id == post.id);
@@ -205,6 +209,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: _StatCard(
                     label: 'Followers',
                     value: formatCount(stats.followerCount),
+                    onTap: () => context.push(
+                      '/social/profile/${widget.userId}/followers',
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -212,6 +219,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: _StatCard(
                     label: 'Following',
                     value: formatCount(stats.followingCount),
+                    onTap: () => context.push(
+                      '/social/profile/${widget.userId}/following',
+                    ),
                   ),
                 ),
               ],
@@ -270,28 +280,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
 class _StatCard extends StatelessWidget {
   final String label;
   final String value;
-  const _StatCard({required this.label, required this.value});
+  final VoidCallback? onTap;
+  const _StatCard({required this.label, required this.value, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        children: [
-          Text(value, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          children: [
+            Text(value, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

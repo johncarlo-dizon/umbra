@@ -152,6 +152,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         body.isEmpty ? ' ' : body,
         parentCommentId: _replyTarget?.id,
         imagePath: imagePath,
+        notifyUserId: _replyTarget?.userId ?? _post?.userId,
       );
 
       final profiles = await SocialService.fetchProfilesByIds([comment.userId]);
@@ -195,7 +196,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       );
     });
     try {
-      await SocialService.toggleLike(post.id, wasLiked);
+      await SocialService.toggleLike(
+        post.id,
+        wasLiked,
+        postOwnerId: post.userId,
+      );
     } on SocialException {
       setState(() => _post = post);
     }
@@ -216,7 +221,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           .toList();
     });
     try {
-      await SocialService.toggleCommentLike(comment.id, wasLiked);
+      await SocialService.toggleCommentLike(
+        comment.id,
+        wasLiked,
+        commentOwnerId: comment.userId,
+      );
     } on SocialException {
       setState(() {
         _comments = _comments

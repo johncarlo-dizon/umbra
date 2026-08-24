@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/post.dart';
+import '../services/social_service.dart';
 import '../utils/format_count.dart';
 import '../utils/time_ago.dart';
 import 'social_avatar.dart';
@@ -137,6 +138,7 @@ class _PostCardState extends State<PostCard> {
             if (_commentsExpanded)
               InlineCommentThread(
                 postId: post.id,
+                postOwnerId: post.userId,
                 onCommentCountChanged: (count) {
                   setState(() => _commentCount = count);
                 },

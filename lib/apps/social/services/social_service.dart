@@ -6,6 +6,7 @@ import '../models/post.dart';
 import '../models/comment.dart';
 import '../models/profile_stats.dart';
 import '../models/profile.dart';
+import '../models/app_notification.dart';
 
 /// Thrown by every SocialService method on failure, with a message
 /// safe to show directly in the UI's error state.
@@ -305,7 +306,11 @@ class SocialService {
 
   // ---------------- Likes ----------------
 
-  static Future<void> toggleLike(String postId, bool currentlyLiked) async {
+  static Future<void> toggleLike(
+    String postId,
+    bool currentlyLiked, {
+    String? postOwnerId,
+  }) async {
     final userId = _myUserId;
     if (userId == null)
       throw SocialException('You must be signed in to like posts.');
@@ -325,6 +330,13 @@ class SocialService {
             .from('likes')
             .insert({'post_id': postId, 'user_id': userId})
             .timeout(_timeout);
+        if (postOwnerId != null) {
+          _createNotification(
+            recipientId: postOwnerId,
+            type: 'like_post',
+            postId: postId,
+          );
+        }
       }
     } on TimeoutException {
       throw SocialException('Request timed out. Try again.');
@@ -360,11 +372,16 @@ class SocialService {
 
   /// [parentCommentId] set = this is a reply. The DB enforces only one
   /// level of nesting (a reply's parent can't itself be a reply).
+  /// [notifyUserId] is the recipient of the resulting notification — the
+  /// post owner for a top-level comment, or the parent comment's author
+  /// for a reply. Passed in explicitly by the caller rather than looked
+  /// up here, since callers already have that id on hand.
   static Future<Comment> addComment(
     String postId,
     String body, {
     String? parentCommentId,
     String? imagePath,
+    String? notifyUserId,
   }) async {
     final userId = _myUserId;
     if (userId == null)
@@ -385,6 +402,15 @@ class SocialService {
           .single()
           .timeout(_timeout);
 
+      if (notifyUserId != null) {
+        _createNotification(
+          recipientId: notifyUserId,
+          type: parentCommentId != null ? 'reply_comment' : 'comment_post',
+          postId: postId,
+          commentId: row['id'] as String,
+        );
+      }
+
       return Comment.fromRow(row, myUserId: userId);
     } on TimeoutException {
       throw SocialException('Request timed out. Try again.');
@@ -395,8 +421,9 @@ class SocialService {
 
   static Future<void> toggleCommentLike(
     String commentId,
-    bool currentlyLiked,
-  ) async {
+    bool currentlyLiked, {
+    String? commentOwnerId,
+  }) async {
     final userId = _myUserId;
     if (userId == null)
       throw SocialException('You must be signed in to like comments.');
@@ -416,6 +443,13 @@ class SocialService {
             .from('comment_likes')
             .insert({'comment_id': commentId, 'user_id': userId})
             .timeout(_timeout);
+        if (commentOwnerId != null) {
+          _createNotification(
+            recipientId: commentOwnerId,
+            type: 'like_comment',
+            commentId: commentId,
+          );
+        }
       }
     } on TimeoutException {
       throw SocialException('Request timed out. Try again.');
@@ -437,6 +471,7 @@ class SocialService {
           .from('follows')
           .insert({'follower_id': userId, 'following_id': targetUserId})
           .timeout(_timeout);
+      _createNotification(recipientId: targetUserId, type: 'follow');
     } on TimeoutException {
       throw SocialException('Request timed out. Try again.');
     } catch (e) {
@@ -511,6 +546,182 @@ class SocialService {
       throw SocialException('Request timed out. Check your connection.');
     } catch (e) {
       throw SocialException('Could not load profile. ($e)');
+    }
+  }
+
+  /// Profiles of everyone following [userId].
+  static Future<List<Profile>> fetchFollowerProfiles(String userId) async {
+    try {
+      final edges = await _client
+          .schema(_schema)
+          .from('follows')
+          .select('follower_id')
+          .eq('following_id', userId)
+          .timeout(_timeout);
+
+      final ids = (edges as List).map(
+        (e) => (e as Map<String, dynamic>)['follower_id'] as String,
+      );
+      final profiles = await fetchProfilesByIds(ids);
+      return profiles.values.toList();
+    } on TimeoutException {
+      throw SocialException('Request timed out. Check your connection.');
+    } catch (e) {
+      throw SocialException('Could not load followers. ($e)');
+    }
+  }
+
+  /// Profiles of everyone [userId] follows.
+  static Future<List<Profile>> fetchFollowingProfiles(String userId) async {
+    try {
+      final edges = await _client
+          .schema(_schema)
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', userId)
+          .timeout(_timeout);
+
+      final ids = (edges as List).map(
+        (e) => (e as Map<String, dynamic>)['following_id'] as String,
+      );
+      final profiles = await fetchProfilesByIds(ids);
+      return profiles.values.toList();
+    } on TimeoutException {
+      throw SocialException('Request timed out. Check your connection.');
+    } catch (e) {
+      throw SocialException('Could not load following. ($e)');
+    }
+  }
+
+  // ---------------- Search ----------------
+
+  /// Matches on display name only — post search isn't implemented yet.
+  static Future<List<Profile>> searchProfiles(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return [];
+
+    try {
+      final rows = await _client
+          .schema(_schema)
+          .from('profiles')
+          .select()
+          .ilike('display_name', '%$trimmed%')
+          .limit(20)
+          .timeout(_timeout);
+
+      return (rows as List)
+          .map((r) => Profile.fromRow(r as Map<String, dynamic>))
+          .toList();
+    } on TimeoutException {
+      throw SocialException('Request timed out. Check your connection.');
+    } catch (e) {
+      throw SocialException('Search failed. ($e)');
+    }
+  }
+
+  // ---------------- Notifications ----------------
+
+  /// Fire-and-forget on purpose — a failed notification insert should
+  /// never block the like/comment/follow action that triggered it.
+  /// Never notifies yourself (e.g. liking or commenting on your own post).
+  static void _createNotification({
+    required String recipientId,
+    required String type,
+    String? postId,
+    String? commentId,
+  }) {
+    final actorId = _myUserId;
+    if (actorId == null || actorId == recipientId) return;
+
+    _client
+        .schema(_schema)
+        .from('notifications')
+        .insert({
+          'user_id': recipientId,
+          'actor_id': actorId,
+          'type': type,
+          if (postId != null) 'post_id': postId,
+          if (commentId != null) 'comment_id': commentId,
+        })
+        .then(
+          (_) {},
+          onError: (_) {
+            // Non-fatal — see doc comment above.
+          },
+        );
+  }
+
+  static Future<List<AppNotification>> fetchNotifications({
+    int limit = 50,
+  }) async {
+    final userId = _myUserId;
+    if (userId == null) return [];
+
+    try {
+      final rows = await _client
+          .schema(_schema)
+          .from('notifications')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(limit)
+          .timeout(_timeout);
+
+      final notifications = (rows as List)
+          .map((r) => AppNotification.fromRow(r as Map<String, dynamic>))
+          .toList();
+
+      final profiles = await fetchProfilesByIds(
+        notifications.map((n) => n.actorId),
+      );
+
+      return notifications.map((n) {
+        final profile = profiles[n.actorId];
+        if (profile == null) return n;
+        return n.withActor(
+          displayName: profile.displayName,
+          avatarPath: profile.avatarPath,
+        );
+      }).toList();
+    } on TimeoutException {
+      throw SocialException('Request timed out. Check your connection.');
+    } catch (e) {
+      throw SocialException('Could not load notifications. ($e)');
+    }
+  }
+
+  static Future<int> unreadNotificationCount() async {
+    final userId = _myUserId;
+    if (userId == null) return 0;
+
+    try {
+      final rows = await _client
+          .schema(_schema)
+          .from('notifications')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('read', false)
+          .timeout(_timeout);
+      return (rows as List).length;
+    } catch (_) {
+      return 0; // non-fatal — badge just shows nothing if this fails
+    }
+  }
+
+  static Future<void> markAllNotificationsRead() async {
+    final userId = _myUserId;
+    if (userId == null) return;
+
+    try {
+      await _client
+          .schema(_schema)
+          .from('notifications')
+          .update({'read': true})
+          .eq('user_id', userId)
+          .eq('read', false)
+          .timeout(_timeout);
+    } catch (_) {
+      // Non-fatal — worst case the badge count is stale until next fetch.
     }
   }
 }

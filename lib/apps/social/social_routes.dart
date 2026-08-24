@@ -4,6 +4,9 @@ import 'screens/post_detail_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/edit_profile_screen.dart';
 import 'screens/create_post_screen.dart';
+import 'screens/notifications_screen.dart';
+import 'screens/follow_list_screen.dart';
+import 'screens/search_screen.dart';
 
 /// Spread this into core/router.dart's routes list: `...socialRoutes`.
 /// No route-level auth guard here — matches the Notes sub-app's
@@ -20,6 +23,14 @@ final List<RouteBase> socialRoutes = [
     builder: (context, state) => const CreatePostScreen(),
   ),
   GoRoute(
+    path: '/social/search',
+    builder: (context, state) => const SearchScreen(),
+  ),
+  GoRoute(
+    path: '/social/notifications',
+    builder: (context, state) => const NotificationsScreen(),
+  ),
+  GoRoute(
     path: '/social/post/:id',
     builder: (context, state) =>
         PostDetailScreen(postId: state.pathParameters['id']!),
@@ -29,6 +40,22 @@ final List<RouteBase> socialRoutes = [
   GoRoute(
     path: '/social/profile/edit',
     builder: (context, state) => const EditProfileScreen(),
+  ),
+  // Also registered before the bare :userId route for the same reason —
+  // "followers"/"following" must win as literal segments.
+  GoRoute(
+    path: '/social/profile/:userId/followers',
+    builder: (context, state) => FollowListScreen(
+      userId: state.pathParameters['userId']!,
+      mode: FollowListMode.followers,
+    ),
+  ),
+  GoRoute(
+    path: '/social/profile/:userId/following',
+    builder: (context, state) => FollowListScreen(
+      userId: state.pathParameters['userId']!,
+      mode: FollowListMode.following,
+    ),
   ),
   GoRoute(
     path: '/social/profile/:userId',

@@ -5,16 +5,19 @@ import '../services/social_service.dart';
 import '../theme/friendbook_colors.dart';
 import 'social_avatar.dart';
 import 'current_user_id_builder.dart';
+import 'notification_bell.dart';
 
 /// The top bar for Social's primary screens.
 ///
 /// - Feed: logo + a separate back arrow (leaves Social entirely, back to
-///   Umbra's Home) + search field + your avatar.
+///   Umbra's Home) + search field + notification bell + your avatar.
 /// - Profile / Comment Thread: logo only (tapping it returns to the
-///   Feed — same as tapping Facebook's own logo) + your avatar. No back
-///   arrow, no search field — those only make sense on the Feed.
+///   Feed — same as tapping Facebook's own logo) + notification bell +
+///   your avatar. No back arrow, no search field — those only make
+///   sense on the Feed.
 ///
-/// Search is visual only for now — not wired to real post/user search yet.
+/// Search opens a dedicated screen that matches on display name only —
+/// post search isn't built yet.
 class SocialTopBar extends StatelessWidget implements PreferredSizeWidget {
   /// Extra icon buttons inserted between the search field and the
   /// name/avatar. (Nothing uses this right now — the profile edit
@@ -77,31 +80,45 @@ class SocialTopBar extends StatelessWidget implements PreferredSizeWidget {
               if (showSearchBar) ...[
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Container(
-                    height: 36,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: kFriendBookOnBlue.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.search, size: 18, color: kFriendBookOnBlue),
-                        SizedBox(width: 8),
-                        Text(
-                          'Search FriendBook',
-                          style: TextStyle(
-                            color: Color(0xDDFFFFFF),
-                            fontSize: 14,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: () => context.push('/social/search'),
+                    child: Container(
+                      height: 36,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: kFriendBookOnBlue.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.search,
+                            size: 18,
+                            color: kFriendBookOnBlue,
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 8),
+                          Text(
+                            'Search FriendBook',
+                            style: TextStyle(
+                              color: Color(0xDDFFFFFF),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ] else
                 const Spacer(),
               ...extraActions,
+              CurrentUserIdBuilder(
+                builder: (context, userId) {
+                  if (userId == null) return const SizedBox.shrink();
+                  return const NotificationBell();
+                },
+              ),
               CurrentUserIdBuilder(
                 builder: (context, userId) {
                   if (userId == null) return const SizedBox.shrink();
