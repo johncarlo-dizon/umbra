@@ -90,19 +90,24 @@ class SocialTopBar extends StatelessWidget implements PreferredSizeWidget {
                         color: kFriendBookOnBlue.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(18),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.search,
                             size: 18,
                             color: kFriendBookOnBlue,
                           ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Search FriendBook',
-                            style: TextStyle(
-                              color: Color(0xDDFFFFFF),
-                              fontSize: 14,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Search FriendBook',
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              softWrap: false,
+                              style: const TextStyle(
+                                color: Color(0xDDFFFFFF),
+                                fontSize: 14,
+                              ),
                             ),
                           ),
                         ],
