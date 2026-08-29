@@ -54,7 +54,7 @@ class _FollowListScreenState extends State<FollowListScreen> {
         ? 'Followers'
         : 'Following';
     return Scaffold(
-      appBar: const SocialTopBar(showBackButton: true),
+      appBar: const SocialTopBar(),
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(

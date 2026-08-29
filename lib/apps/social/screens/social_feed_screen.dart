@@ -107,6 +107,29 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
     ).showSnackBar(const SnackBar(content: Text('Link copied')));
   }
 
+  Future<void> _editPost(Post post, String newBody) async {
+    final updated = await SocialService.updatePost(post.id, body: newBody);
+    setState(() {
+      final idx = _posts.indexWhere((p) => p.id == post.id);
+      if (idx != -1) {
+        // updatePost's query doesn't join profile info — carry it over
+        // from the post we already had, same as elsewhere in this file.
+        _posts[idx] = updated.copyWith(
+          authorDisplayName: post.authorDisplayName,
+          authorAvatarPath: post.authorAvatarPath,
+        );
+      }
+    });
+  }
+
+  Future<void> _deletePost(Post post) async {
+    await SocialService.deletePost(post.id, imagePaths: post.imagePaths);
+    setState(() {
+      _posts.removeWhere((p) => p.id == post.id);
+      if (_posts.isEmpty) _state = _FeedState.empty;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!SupabaseService.isLoggedIn) {
@@ -210,6 +233,8 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                     post: _posts[i],
                     onLike: _toggleLike,
                     onShare: _sharePost,
+                    onEdit: _editPost,
+                    onDelete: _deletePost,
                   ),
                 ),
               ),

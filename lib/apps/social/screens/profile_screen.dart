@@ -10,6 +10,7 @@ import '../utils/format_count.dart';
 import '../widgets/social_avatar.dart';
 import '../widgets/social_top_bar.dart';
 import '../widgets/post_card.dart';
+import '../theme/friendbook_colors.dart';
 
 enum _LoadState { loading, loaded, error }
 
@@ -95,6 +96,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Link copied')));
+  }
+
+  Future<void> _editPost(Post post, String newBody) async {
+    final updated = await SocialService.updatePost(post.id, body: newBody);
+    setState(() {
+      final idx = _posts.indexWhere((p) => p.id == post.id);
+      if (idx != -1) {
+        _posts[idx] = updated.copyWith(
+          authorDisplayName: post.authorDisplayName,
+          authorAvatarPath: post.authorAvatarPath,
+        );
+      }
+    });
+  }
+
+  Future<void> _deletePost(Post post) async {
+    await SocialService.deletePost(post.id, imagePaths: post.imagePaths);
+    setState(() {
+      _posts.removeWhere((p) => p.id == post.id);
+      if (_stats != null) {
+        _stats = ProfileStats(
+          userId: _stats!.userId,
+          followerCount: _stats!.followerCount,
+          followingCount: _stats!.followingCount,
+          postCount: _stats!.postCount - 1,
+          followedByMe: _stats!.followedByMe,
+        );
+      }
+    });
   }
 
   Future<void> _toggleFollow() async {
@@ -228,9 +258,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             if (!_isMe) ...[
               const SizedBox(height: 16),
-              FilledButton.tonal(
+              FilledButton(
                 onPressed: _followBusy ? null : _toggleFollow,
                 style: FilledButton.styleFrom(
+                  backgroundColor: kFriendBookBlue,
+                  foregroundColor: kFriendBookOnBlue,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(22),
                   ),
@@ -268,6 +300,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     post: post,
                     onLike: _toggleLike,
                     onShare: _sharePost,
+                    onEdit: _editPost,
+                    onDelete: _deletePost,
                   ),
                 ),
               ),

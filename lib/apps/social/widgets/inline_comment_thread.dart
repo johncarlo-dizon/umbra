@@ -190,6 +190,7 @@ class _InlineCommentThreadState extends State<InlineCommentThread> {
         comment.id,
         wasLiked,
         commentOwnerId: comment.userId,
+        postId: widget.postId,
       );
     } on SocialException {
       setState(() {

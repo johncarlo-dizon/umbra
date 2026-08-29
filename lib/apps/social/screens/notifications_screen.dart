@@ -57,7 +57,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const SocialTopBar(showBackButton: true),
+      appBar: const SocialTopBar(),
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(

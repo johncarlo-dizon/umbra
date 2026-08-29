@@ -144,6 +144,70 @@ class SocialService {
     }
   }
 
+  /// Text-only edit — this app doesn't support adding/removing images
+  /// on an existing post, only on creation. The returned Post has no
+  /// author display info populated (this query doesn't join profiles);
+  /// callers should copy that over from the pre-edit Post they already
+  /// have, same as elsewhere in this file.
+  static Future<Post> updatePost(String postId, {required String body}) async {
+    final userId = _myUserId;
+    if (userId == null) throw SocialException('You must be signed in.');
+
+    try {
+      final row = await _client
+          .schema(_schema)
+          .from('posts')
+          .update({'body': body})
+          .eq('id', postId)
+          .eq('user_id', userId)
+          .select(
+            '*, likes(user_id), comments(id), post_images(image_path, position)',
+          )
+          .single()
+          .timeout(_timeout);
+
+      return Post.fromRow(row, myUserId: userId);
+    } on TimeoutException {
+      throw SocialException('Request timed out. Try again.');
+    } catch (e) {
+      throw SocialException('Could not update post. ($e)');
+    }
+  }
+
+  /// [imagePaths] triggers a best-effort storage cleanup — non-fatal if
+  /// it fails, since the actual post row (and its post_images rows, via
+  /// cascade) are what matter and get deleted regardless.
+  static Future<void> deletePost(
+    String postId, {
+    List<String> imagePaths = const [],
+  }) async {
+    final userId = _myUserId;
+    if (userId == null) throw SocialException('You must be signed in.');
+
+    if (imagePaths.isNotEmpty) {
+      try {
+        await _client.storage.from(_imagesBucket).remove(imagePaths);
+      } catch (_) {
+        // Non-fatal — an orphaned storage file isn't worth failing the
+        // whole delete over.
+      }
+    }
+
+    try {
+      await _client
+          .schema(_schema)
+          .from('posts')
+          .delete()
+          .eq('id', postId)
+          .eq('user_id', userId)
+          .timeout(_timeout);
+    } on TimeoutException {
+      throw SocialException('Request timed out. Try again.');
+    } catch (e) {
+      throw SocialException('Could not delete post. ($e)');
+    }
+  }
+
   /// [kind] is folded into the filename (not a subfolder) so the storage
   /// RLS policy — which checks the first path segment equals the user's
   /// id — still applies unchanged to both post images and avatars.
@@ -423,6 +487,7 @@ class SocialService {
     String commentId,
     bool currentlyLiked, {
     String? commentOwnerId,
+    String? postId,
   }) async {
     final userId = _myUserId;
     if (userId == null)
@@ -448,6 +513,7 @@ class SocialService {
             recipientId: commentOwnerId,
             type: 'like_comment',
             commentId: commentId,
+            postId: postId,
           );
         }
       }
