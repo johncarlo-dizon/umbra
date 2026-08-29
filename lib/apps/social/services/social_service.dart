@@ -251,6 +251,13 @@ class SocialService {
   /// Safe to call repeatedly (e.g. every time Social opens) — a no-op
   /// if a profile already exists, since it only sets defaults on insert.
   /// Always refreshes myProfileNotifier on success.
+  static String _defaultDisplayNameFromEmail(String? email) {
+    if (email == null || !email.contains('@')) return 'New User';
+    final localPart = email.split('@').first;
+    if (localPart.isEmpty) return 'New User';
+    return localPart[0].toUpperCase() + localPart.substring(1);
+  }
+
   static Future<void> ensureProfile() async {
     final userId = _myUserId;
     if (userId == null) return;
@@ -265,10 +272,13 @@ class SocialService {
           .timeout(_timeout);
 
       if (existing == null) {
+        final defaultName = _defaultDisplayNameFromEmail(
+          _client.auth.currentUser?.email,
+        );
         final row = await _client
             .schema(_schema)
             .from('profiles')
-            .insert({'user_id': userId})
+            .insert({'user_id': userId, 'display_name': defaultName})
             .select()
             .single()
             .timeout(_timeout);
