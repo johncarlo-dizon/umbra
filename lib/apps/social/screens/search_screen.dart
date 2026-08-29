@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../models/profile.dart';
 import '../services/social_service.dart';
 import '../widgets/social_avatar.dart';
+import '../theme/friendbook_colors.dart';
 
 enum _SearchState { idle, loading, loaded, error }
 
@@ -68,17 +69,44 @@ class _SearchScreenState extends State<SearchScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: kFriendBookBlue,
+        foregroundColor: kFriendBookOnBlue,
+        elevation: 0,
+        titleSpacing: 8,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: kFriendBookOnBlue),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: TextField(
-          controller: _controller,
-          focusNode: _focusNode,
-          onChanged: _search,
-          decoration: const InputDecoration(
-            hintText: 'Search people on FriendBook',
-            border: InputBorder.none,
+        title: Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: Container(
+            height: 36,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: kFriendBookOnBlue.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              onChanged: _search,
+              style: const TextStyle(color: kFriendBookOnBlue, fontSize: 15),
+              cursorColor: kFriendBookOnBlue,
+              decoration: InputDecoration(
+                hintText: 'Search people on FriendBook',
+                hintStyle: TextStyle(
+                  color: kFriendBookOnBlue.withValues(alpha: 0.7),
+                  fontSize: 15,
+                ),
+                filled: false,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
           ),
         ),
       ),
